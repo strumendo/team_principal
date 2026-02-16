@@ -5,28 +5,26 @@ Utilitarios de seguranca: gerenciamento de tokens JWT e hashing de senha.
 
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.config import settings
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
     """
-    Hash a plaintext password.
-    Gera o hash de uma senha em texto puro.
+    Hash a plaintext password using bcrypt.
+    Gera o hash de uma senha em texto puro usando bcrypt.
     """
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Verify a plaintext password against a hash.
-    Verifica uma senha em texto puro contra um hash.
+    Verify a plaintext password against a bcrypt hash.
+    Verifica uma senha em texto puro contra um hash bcrypt.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def create_access_token(subject: str, expires_delta: timedelta | None = None) -> str:

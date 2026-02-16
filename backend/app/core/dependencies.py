@@ -3,6 +3,8 @@ FastAPI dependencies for authentication and authorization.
 Dependencias FastAPI para autenticacao e autorizacao.
 """
 
+import uuid
+
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
@@ -32,8 +34,13 @@ async def get_current_user(
     if token_type != "access":
         raise CredentialsException("Invalid token type")
 
-    user_id: str | None = payload.get("sub")
-    if user_id is None:
+    user_id_str: str | None = payload.get("sub")
+    if user_id_str is None:
+        raise CredentialsException()
+
+    try:
+        user_id = uuid.UUID(user_id_str)
+    except ValueError:
         raise CredentialsException()
 
     result = await db.execute(select(User).where(User.id == user_id))
