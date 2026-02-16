@@ -3,6 +3,8 @@ Auth business logic.
 Logica de negocios de autenticacao.
 """
 
+import uuid as uuid_mod
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -75,8 +77,13 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> dict[str
     if payload.get("type") != "refresh":
         raise CredentialsException("Invalid token type")
 
-    user_id = payload.get("sub")
-    if user_id is None:
+    user_id_str = payload.get("sub")
+    if user_id_str is None:
+        raise CredentialsException("Invalid refresh token")
+
+    try:
+        user_id = uuid_mod.UUID(user_id_str)
+    except ValueError:
         raise CredentialsException("Invalid refresh token")
 
     result = await db.execute(select(User).where(User.id == user_id))

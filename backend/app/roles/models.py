@@ -6,8 +6,7 @@ Modelos de Papel e Permissao para RBAC.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -16,18 +15,18 @@ from app.db.base import Base
 role_permissions = Table(
     "role_permissions",
     Base.metadata,
-    Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-    Column("permission_id", UUID(as_uuid=True), ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
+    Column("role_id", Uuid, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+    Column("permission_id", Uuid, ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
 )
 
 # Association table: user <-> role / Tabela associativa: usuario <-> papel
 user_roles = Table(
     "user_roles",
     Base.metadata,
-    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", Uuid, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("role_id", Uuid, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
     Column("assigned_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
-    Column("assigned_by", UUID(as_uuid=True), ForeignKey("users.id"), nullable=True),
+    Column("assigned_by", Uuid, ForeignKey("users.id"), nullable=True),
 )
 
 
@@ -39,9 +38,7 @@ class Role(Base):
 
     __tablename__ = "roles"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid()
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(128), nullable=False)
     description: Mapped[str | None] = mapped_column(String(512), nullable=True)
@@ -56,7 +53,12 @@ class Role(Base):
         "Permission", secondary=role_permissions, back_populates="roles", lazy="selectin"
     )
     users: Mapped[list["User"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
-        "User", secondary=user_roles, back_populates="roles", lazy="selectin"
+        "User",
+        secondary=user_roles,
+        primaryjoin="Role.id == user_roles.c.role_id",
+        secondaryjoin="User.id == user_roles.c.user_id",
+        back_populates="roles",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:
@@ -71,9 +73,7 @@ class Permission(Base):
 
     __tablename__ = "permissions"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid()
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     codename: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String(512), nullable=True)
     module: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
