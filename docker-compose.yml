@@ -1,0 +1,65 @@
+# TeamPrincipal — Docker Compose
+# Starts PostgreSQL, backend (FastAPI), and frontend (Next.js)
+# Inicia PostgreSQL, backend (FastAPI) e frontend (Next.js)
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: team_principal
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: team_principal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U team_principal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: team_principal
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: team_principal
+      SECRET_KEY: docker-dev-secret-key
+      BACKEND_CORS_ORIGINS: '["http://localhost:3000"]'
+      DEBUG: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: docker-dev-nextauth-secret
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+
+volumes:
+  postgres_data:
