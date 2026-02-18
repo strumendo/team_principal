@@ -1,6 +1,6 @@
 """
-Database seeding script for initial system roles.
-Script de seed do banco de dados para papeis iniciais do sistema.
+Database seeding script for initial system roles and permissions.
+Script de seed do banco de dados para papeis e permissoes iniciais do sistema.
 
 Usage / Uso: python -m app.db.seed
 """
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.config import settings
 from app.db.base import Base  # noqa: F401
-from app.roles.models import Role
+from app.roles.models import Permission, Role
 
 # System roles / Papeis do sistema
 SYSTEM_ROLES = [
@@ -54,6 +54,51 @@ SYSTEM_ROLES = [
     },
 ]
 
+# System permissions / Permissoes do sistema
+SYSTEM_PERMISSIONS = [
+    {"codename": "auth:register", "module": "auth", "description": "Register new users / Registrar novos usuarios"},
+    {"codename": "users:read", "module": "users", "description": "Read any user / Ler qualquer usuario"},
+    {"codename": "users:read_self", "module": "users", "description": "Read own profile / Ler perfil proprio"},
+    {"codename": "users:update", "module": "users", "description": "Update any user / Atualizar qualquer usuario"},
+    {
+        "codename": "users:update_self",
+        "module": "users",
+        "description": "Update own profile / Atualizar perfil proprio",
+    },
+    {"codename": "users:list", "module": "users", "description": "List all users / Listar todos os usuarios"},
+    {"codename": "users:delete", "module": "users", "description": "Delete users / Excluir usuarios"},
+    {"codename": "roles:read", "module": "roles", "description": "Read roles / Ler papeis"},
+    {"codename": "roles:create", "module": "roles", "description": "Create roles / Criar papeis"},
+    {"codename": "roles:update", "module": "roles", "description": "Update roles / Atualizar papeis"},
+    {"codename": "roles:delete", "module": "roles", "description": "Delete roles / Excluir papeis"},
+    {
+        "codename": "roles:assign",
+        "module": "roles",
+        "description": "Assign roles to users / Atribuir papeis a usuarios",
+    },
+    {
+        "codename": "roles:revoke",
+        "module": "roles",
+        "description": "Revoke roles from users / Revogar papeis de usuarios",
+    },
+    {"codename": "permissions:read", "module": "permissions", "description": "Read permissions / Ler permissoes"},
+    {
+        "codename": "permissions:create",
+        "module": "permissions",
+        "description": "Create permissions / Criar permissoes",
+    },
+    {
+        "codename": "permissions:assign",
+        "module": "permissions",
+        "description": "Assign permissions to roles / Atribuir permissoes a papeis",
+    },
+    {
+        "codename": "permissions:revoke",
+        "module": "permissions",
+        "description": "Revoke permissions from roles / Revogar permissoes de papeis",
+    },
+]
+
 
 async def seed_roles(session: AsyncSession) -> None:
     """
@@ -71,6 +116,22 @@ async def seed_roles(session: AsyncSession) -> None:
     await session.commit()
 
 
+async def seed_permissions(session: AsyncSession) -> None:
+    """
+    Seed system permissions if they don't exist.
+    Popula permissoes do sistema se nao existirem.
+    """
+    for perm_data in SYSTEM_PERMISSIONS:
+        result = await session.execute(select(Permission).where(Permission.codename == perm_data["codename"]))
+        existing = result.scalar_one_or_none()
+        if existing is None:
+            session.add(Permission(**perm_data))
+            print(f"  Created permission / Permissao criada: {perm_data['codename']}")
+        else:
+            print(f"  Permission already exists / Permissao ja existe: {perm_data['codename']}")
+    await session.commit()
+
+
 async def main() -> None:
     """
     Main seed function.
@@ -83,6 +144,7 @@ async def main() -> None:
 
     async with async_session() as session:
         await seed_roles(session)
+        await seed_permissions(session)
 
     await engine.dispose()
     print("Done! / Concluido!")
