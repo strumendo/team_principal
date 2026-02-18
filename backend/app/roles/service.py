@@ -167,15 +167,15 @@ async def list_user_roles(db: AsyncSession, user_id: uuid.UUID) -> list[Role]:
     Lista todos os papeis atribuidos a um usuario. Lanca NotFoundException se usuario nao encontrado.
     """
     # Validate user exists / Validar que usuario existe
-    result = await db.execute(select(User).where(User.id == user_id))
-    if result.scalar_one_or_none() is None:
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    if user_result.scalar_one_or_none() is None:
         raise NotFoundException("User not found")
 
     # Query roles via join to avoid stale cache / Consultar papeis via join para evitar cache obsoleto
-    result = await db.execute(
+    roles_result = await db.execute(
         select(Role).join(user_roles, Role.id == user_roles.c.role_id).where(user_roles.c.user_id == user_id)
     )
-    return list(result.scalars().all())
+    return list(roles_result.scalars().all())
 
 
 async def assign_role_to_user(

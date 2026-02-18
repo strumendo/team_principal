@@ -36,12 +36,12 @@ async def get_current_user(
     if token_type != "access":
         raise CredentialsException("Invalid token type")
 
-    user_id_str: str | None = payload.get("sub")
-    if user_id_str is None:
+    raw_sub = payload.get("sub")
+    if not isinstance(raw_sub, str):
         raise CredentialsException()
 
     try:
-        user_id = uuid.UUID(user_id_str)
+        user_id = uuid.UUID(raw_sub)
     except ValueError as err:
         raise CredentialsException() from err
 
