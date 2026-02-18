@@ -132,6 +132,41 @@ async def seed_permissions(session: AsyncSession) -> None:
     await session.commit()
 
 
+# Role-permission assignments / Atribuicoes de permissao a papel
+# admin gets all permissions, pilot gets self-access permissions
+ROLE_PERMISSIONS: dict[str, list[str]] = {
+    "admin": [p["codename"] for p in SYSTEM_PERMISSIONS],
+    "pilot": ["users:read_self", "users:update_self"],
+}
+
+
+async def seed_role_permissions(session: AsyncSession) -> None:
+    """
+    Seed role-permission assignments if they don't exist.
+    Popula atribuicoes de permissao a papel se nao existirem.
+    """
+    for role_name, codenames in ROLE_PERMISSIONS.items():
+        result = await session.execute(select(Role).where(Role.name == role_name))
+        role = result.scalar_one_or_none()
+        if role is None:
+            print(f"  Role not found, skipping / Papel nao encontrado: {role_name}")
+            continue
+
+        existing_codenames = {p.codename for p in role.permissions}
+        for codename in codenames:
+            if codename in existing_codenames:
+                continue
+            perm_result = await session.execute(select(Permission).where(Permission.codename == codename))
+            perm = perm_result.scalar_one_or_none()
+            if perm is None:
+                print(f"  Permission not found / Permissao nao encontrada: {codename}")
+                continue
+            role.permissions.append(perm)
+            print(f"  Assigned {codename} -> {role_name}")
+
+    await session.commit()
+
+
 async def main() -> None:
     """
     Main seed function.
@@ -145,6 +180,7 @@ async def main() -> None:
     async with async_session() as session:
         await seed_roles(session)
         await seed_permissions(session)
+        await seed_role_permissions(session)
 
     await engine.dispose()
     print("Done! / Concluido!")
