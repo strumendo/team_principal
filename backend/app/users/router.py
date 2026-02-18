@@ -8,7 +8,7 @@ import uuid
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import get_current_active_user, require_permissions
 from app.db.session import get_db
 from app.users.models import User
 from app.users.schemas import UserResponse, UserUpdate
@@ -44,11 +44,11 @@ async def update_current_user(
 @router.get("/{user_id}", response_model=UserResponse)
 async def read_user(
     user_id: uuid.UUID,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("users:read")),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """
-    Get a user by ID (requires authentication).
-    Busca um usuario por ID (requer autenticacao).
+    Get a user by ID (requires users:read permission).
+    Busca um usuario por ID (requer permissao users:read).
     """
     return await get_user_by_id(db, user_id)

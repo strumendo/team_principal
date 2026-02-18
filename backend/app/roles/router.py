@@ -8,7 +8,7 @@ import uuid
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import require_permissions
 from app.db.session import get_db
 from app.roles.schemas import (
     PermissionCreateRequest,
@@ -43,7 +43,7 @@ roles_router = APIRouter(prefix="/api/v1/roles", tags=["roles"])
 @permissions_router.get("/", response_model=list[PermissionResponse])
 async def read_permissions(
     module: str | None = Query(default=None, description="Filter by module / Filtrar por modulo"),
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("permissions:read")),
     db: AsyncSession = Depends(get_db),
 ) -> list:
     """
@@ -56,7 +56,7 @@ async def read_permissions(
 @permissions_router.get("/{permission_id}", response_model=PermissionResponse)
 async def read_permission(
     permission_id: uuid.UUID,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("permissions:read")),
     db: AsyncSession = Depends(get_db),
 ) -> PermissionResponse:
     """
@@ -69,7 +69,7 @@ async def read_permission(
 @permissions_router.post("/", response_model=PermissionResponse, status_code=201)
 async def create_new_permission(
     body: PermissionCreateRequest,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("permissions:create")),
     db: AsyncSession = Depends(get_db),
 ) -> PermissionResponse:
     """
@@ -86,7 +86,7 @@ async def create_new_permission(
 
 @roles_router.get("/", response_model=list[RoleListResponse])
 async def read_roles(
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("roles:read")),
     db: AsyncSession = Depends(get_db),
 ) -> list:
     """
@@ -99,7 +99,7 @@ async def read_roles(
 @roles_router.get("/{role_id}", response_model=RoleResponse)
 async def read_role(
     role_id: uuid.UUID,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("roles:read")),
     db: AsyncSession = Depends(get_db),
 ) -> RoleResponse:
     """
@@ -112,7 +112,7 @@ async def read_role(
 @roles_router.post("/", response_model=RoleResponse, status_code=201)
 async def create_new_role(
     body: RoleCreateRequest,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("roles:create")),
     db: AsyncSession = Depends(get_db),
 ) -> RoleResponse:
     """
@@ -128,7 +128,7 @@ async def create_new_role(
 async def update_existing_role(
     role_id: uuid.UUID,
     body: RoleUpdateRequest,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("roles:update")),
     db: AsyncSession = Depends(get_db),
 ) -> RoleResponse:
     """
@@ -136,13 +136,15 @@ async def update_existing_role(
     Atualiza o nome de exibicao ou descricao de um papel.
     """
     role = await get_role_by_id(db, role_id)
-    return await update_role(db, role, display_name=body.display_name, description=body.description)  # type: ignore[return-value]
+    return await update_role(  # type: ignore[return-value]
+        db, role, display_name=body.display_name, description=body.description
+    )
 
 
 @roles_router.delete("/{role_id}", status_code=204)
 async def delete_existing_role(
     role_id: uuid.UUID,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("roles:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """
@@ -158,7 +160,7 @@ async def delete_existing_role(
 async def assign_permission(
     role_id: uuid.UUID,
     body: RolePermissionRequest,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("permissions:assign")),
     db: AsyncSession = Depends(get_db),
 ) -> RoleResponse:
     """
@@ -172,7 +174,7 @@ async def assign_permission(
 async def revoke_permission(
     role_id: uuid.UUID,
     permission_id: uuid.UUID,
-    _current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(require_permissions("permissions:revoke")),
     db: AsyncSession = Depends(get_db),
 ) -> RoleResponse:
     """
