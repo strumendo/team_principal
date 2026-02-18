@@ -86,6 +86,12 @@ backend/
 │   │   ├── models.py        # Role, Permission, user_roles, role_permissions
 │   │   └── schemas.py       # 8 Pydantic schemas
 │   │
+│   ├── teams/               # Teams module / Modulo de equipes
+│   │   ├── router.py        # CRUD + membership endpoints (8 endpoints)
+│   │   ├── service.py       # CRUD + membership business logic
+│   │   ├── models.py        # Team ORM model (1:N with User)
+│   │   └── schemas.py       # 7 Pydantic schemas
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -97,6 +103,8 @@ backend/
 │   ├── test_roles.py        # 13 tests
 │   ├── test_rbac.py         # 12 tests
 │   ├── test_user_roles.py   # 10 tests
+│   ├── test_teams.py        # 19 tests
+│   ├── test_team_members.py # 14 tests
 │   └── test_health.py       # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -160,6 +168,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `permissions_router` | `/api/v1/permissions` | `app/roles/router.py` |
 | `roles_router` | `/api/v1/roles` | `app/roles/router.py` |
 | `user_roles_router` | `/api/v1/users` | `app/roles/router.py` |
+| `teams_router` | `/api/v1/teams` | `app/teams/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -186,6 +195,14 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | GET | `/api/v1/users/{id}/roles` | `roles:read` | roles |
 | POST | `/api/v1/users/{id}/roles` | `roles:assign` | roles |
 | DELETE | `/api/v1/users/{id}/roles/{rid}` | `roles:revoke` | roles |
+| GET | `/api/v1/teams/` | `teams:read` | teams |
+| GET | `/api/v1/teams/{id}` | `teams:read` | teams |
+| POST | `/api/v1/teams/` | `teams:create` | teams |
+| PATCH | `/api/v1/teams/{id}` | `teams:update` | teams |
+| DELETE | `/api/v1/teams/{id}` | `teams:delete` | teams |
+| GET | `/api/v1/teams/{id}/members` | `teams:read` | teams |
+| POST | `/api/v1/teams/{id}/members` | `teams:manage_members` | teams |
+| DELETE | `/api/v1/teams/{id}/members/{uid}` | `teams:manage_members` | teams |
 
 ---
 
@@ -267,10 +284,10 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 │ is_active       │   │    │ is_system       │   │    │ created_at      │
 │ is_superuser    │   │    │ created_at      │   │    │ updated_at      │
 │ avatar_url      │   │    │ updated_at      │   │    └────────┬────────┘
-│ created_at      │   │    └────────┬────────┘   │             │
+│ team_id FK  IDX │───┐    └────────┬────────┘   │             │
+│ created_at      │   │             │             │             │
 │ updated_at      │   │             │             │             │
-└────────┬────────┘   │             │             │             │
-         │            │    ┌────────┴────────┐   │    ┌────────┴────────┐
+└────────┬────────┘   │    ┌────────┴────────┐   │    ┌────────┴────────┐
          │            │    │   user_roles     │   │    │role_permissions │
          │            │    ├─────────────────┤   │    ├─────────────────┤
          └────────────┼───>│ user_id     PK  │   │    │ role_id     PK  │
@@ -278,6 +295,19 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
                       │    │ assigned_at     │        └─────────────────┘
                       └────│ assigned_by FK  │
                            └─────────────────┘
+
+┌─────────────────┐
+│      teams       │
+├─────────────────┤
+│ id          PK  │◄── users.team_id (SET NULL)
+│ name        UQ  │
+│ display_name    │
+│ description     │
+│ logo_url        │
+│ is_active       │
+│ created_at      │
+│ updated_at      │
+└─────────────────┘
 ```
 
 ### Conventions / Convencoes
@@ -285,7 +315,7 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 - **Primary keys:** UUID (`sqlalchemy.Uuid` — generic, not PostgreSQL-specific)
 - **Timestamps:** `DateTime(timezone=True)` with `server_default=func.now()`
 - **Naming:** snake_case for all tables and columns
-- **Cascading:** `ondelete="CASCADE"` on association table FKs
+- **Cascading:** `ondelete="CASCADE"` on association table FKs, `ondelete="SET NULL"` on optional FKs (e.g., `users.team_id`)
 - **Lazy loading:** `lazy="selectin"` for all relationships (eager loading)
 - **String limits:** email(320), name(64/128/256), description(512), codename(128)
 
@@ -342,7 +372,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│  Integration (56) │  ← httpx AsyncClient against test app
+│  Integration (89) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
