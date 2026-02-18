@@ -143,9 +143,9 @@ Role.users ←→ User.roles               # via user_roles
 
 ## System Permissions / Permissoes do Sistema
 
-17 permissions organized by module. Seeded by `app/db/seed.py`.
+22 permissions organized by module. Seeded by `app/db/seed.py`.
 
-17 permissoes organizadas por modulo. Populadas por `app/db/seed.py`.
+22 permissoes organizadas por modulo. Populadas por `app/db/seed.py`.
 
 | Codename | Module | Description / Descricao |
 |---|---|---|
@@ -166,6 +166,11 @@ Role.users ←→ User.roles               # via user_roles
 | `permissions:create` | `permissions` | Create permissions / Criar permissoes |
 | `permissions:assign` | `permissions` | Assign permissions to roles / Atribuir permissoes a papeis |
 | `permissions:revoke` | `permissions` | Revoke permissions from roles / Revogar permissoes de papeis |
+| `teams:read` | `teams` | Read teams and members / Ler equipes e membros |
+| `teams:create` | `teams` | Create teams / Criar equipes |
+| `teams:update` | `teams` | Update teams / Atualizar equipes |
+| `teams:delete` | `teams` | Delete teams / Excluir equipes |
+| `teams:manage_members` | `teams` | Manage team members / Gerenciar membros da equipe |
 
 ---
 
@@ -177,8 +182,8 @@ Role.users ←→ User.roles               # via user_roles
 
 | Role | Display Name | Default Permissions | Description |
 |---|---|---|---|
-| `admin` | Admin | **All 17 permissions** | Full system access |
-| `pilot` | Pilot | `users:read_self`, `users:update_self` | Driver with own data access |
+| `admin` | Admin | **All 22 permissions** | Full system access |
+| `pilot` | Pilot | `users:read_self`, `users:update_self`, `teams:read` | Driver with own data access |
 | `tech_lead` | Tech Lead | *(none — configure as needed)* | Technical leadership |
 | `performance_lead` | Performance Lead | *(none)* | Performance analysis |
 | `radio_support` | Radio/Support | *(none)* | Communication and race support |
