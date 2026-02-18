@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictException, NotFoundException
 from app.teams.models import Team
+from app.users.models import User
 
 
 async def list_teams(db: AsyncSession, is_active: bool | None = None) -> list[Team]:
@@ -85,8 +86,70 @@ async def update_team(
 
 async def delete_team(db: AsyncSession, team: Team) -> None:
     """
-    Delete a team.
-    Exclui uma equipe.
+    Delete a team. Nullifies team_id for all members before deleting.
+    Exclui uma equipe. Anula team_id de todos os membros antes de excluir.
     """
+    for member in team.members:
+        member.team_id = None
+    await db.flush()
     await db.delete(team)
     await db.commit()
+
+
+# --- Membership services / Servicos de membros ---
+
+
+async def list_team_members(db: AsyncSession, team_id: uuid.UUID) -> list[User]:
+    """
+    List all members of a team.
+    Lista todos os membros de uma equipe.
+    """
+    team = await get_team_by_id(db, team_id)
+    return list(team.members)
+
+
+async def add_member(db: AsyncSession, team_id: uuid.UUID, user_id: uuid.UUID) -> list[User]:
+    """
+    Add a user to a team. Raises NotFoundException if user/team not found.
+    Raises ConflictException if user already belongs to a team.
+
+    Adiciona um usuario a uma equipe. Lanca NotFoundException se usuario/equipe nao encontrado.
+    Lanca ConflictException se o usuario ja pertence a uma equipe.
+    """
+    team = await get_team_by_id(db, team_id)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise NotFoundException("User not found")
+
+    if user.team_id is not None:
+        if user.team_id == team_id:
+            raise ConflictException("User is already a member of this team")
+        raise ConflictException("User already belongs to another team")
+
+    user.team_id = team_id
+    await db.commit()
+    await db.refresh(team)
+    return list(team.members)
+
+
+async def remove_member(db: AsyncSession, team_id: uuid.UUID, user_id: uuid.UUID) -> list[User]:
+    """
+    Remove a user from a team. Raises NotFoundException if user is not a member.
+    Remove um usuario de uma equipe. Lanca NotFoundException se o usuario nao e membro.
+    """
+    team = await get_team_by_id(db, team_id)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise NotFoundException("User not found")
+
+    if user.team_id != team_id:
+        raise NotFoundException("User is not a member of this team")
+
+    user.team_id = None
+    await db.commit()
+    await db.refresh(team)
+    return list(team.members)

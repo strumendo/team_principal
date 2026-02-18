@@ -47,6 +47,34 @@ class TeamCreateRequest(BaseModel):
     logo_url: str | None = None
 
 
+class TeamMemberResponse(BaseModel):
+    """Team member response body / Corpo da resposta de membro da equipe."""
+
+    id: uuid.UUID
+    email: str
+    full_name: str
+    is_active: bool
+    avatar_url: str | None
+
+    model_config = {"from_attributes": True}
+
+
+class TeamDetailResponse(BaseModel):
+    """Team detail response body with members / Corpo da resposta detalhada de equipe com membros."""
+
+    id: uuid.UUID
+    name: str
+    display_name: str
+    description: str | None
+    logo_url: str | None
+    is_active: bool
+    members: list[TeamMemberResponse]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class TeamUpdateRequest(BaseModel):
     """Team update request body / Corpo da requisicao de atualizacao de equipe."""
 
@@ -54,3 +82,9 @@ class TeamUpdateRequest(BaseModel):
     description: str | None = None
     logo_url: str | None = None
     is_active: bool | None = None
+
+
+class TeamAddMemberRequest(BaseModel):
+    """Team add member request body / Corpo da requisicao de adicao de membro."""
+
+    user_id: uuid.UUID
