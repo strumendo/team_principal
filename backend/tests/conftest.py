@@ -14,6 +14,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
 from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
+from app.teams.models import Team  # noqa: F401
 from app.users.models import User  # noqa: F401
 
 # Use in-memory SQLite for tests / Usa SQLite em memoria para testes
@@ -113,6 +114,11 @@ async def admin_user(db_session: AsyncSession) -> User:
         ("roles:assign", "roles"),
         ("roles:revoke", "roles"),
         ("users:read", "users"),
+        ("teams:read", "teams"),
+        ("teams:create", "teams"),
+        ("teams:update", "teams"),
+        ("teams:delete", "teams"),
+        ("teams:manage_members", "teams"),
     ]:
         perm = Permission(codename=codename, module=module)
         db_session.add(perm)

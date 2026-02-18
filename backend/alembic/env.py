@@ -16,6 +16,7 @@ from app.db.base import Base
 # Importa todos os modelos para que sejam registrados no Base.metadata
 from app.users.models import User  # noqa: F401
 from app.roles.models import Role, Permission, role_permissions, user_roles  # noqa: F401
+from app.teams.models import Team  # noqa: F401
 
 config = context.config
 

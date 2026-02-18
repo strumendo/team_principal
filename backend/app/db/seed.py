@@ -97,6 +97,15 @@ SYSTEM_PERMISSIONS = [
         "module": "permissions",
         "description": "Revoke permissions from roles / Revogar permissoes de papeis",
     },
+    {"codename": "teams:read", "module": "teams", "description": "Read teams / Ler equipes"},
+    {"codename": "teams:create", "module": "teams", "description": "Create teams / Criar equipes"},
+    {"codename": "teams:update", "module": "teams", "description": "Update teams / Atualizar equipes"},
+    {"codename": "teams:delete", "module": "teams", "description": "Delete teams / Excluir equipes"},
+    {
+        "codename": "teams:manage_members",
+        "module": "teams",
+        "description": "Manage team members / Gerenciar membros da equipe",
+    },
 ]
 
 
@@ -136,7 +145,7 @@ async def seed_permissions(session: AsyncSession) -> None:
 # admin gets all permissions, pilot gets self-access permissions
 ROLE_PERMISSIONS: dict[str, list[str]] = {
     "admin": [p["codename"] for p in SYSTEM_PERMISSIONS],
-    "pilot": ["users:read_self", "users:update_self"],
+    "pilot": ["users:read_self", "users:update_self", "teams:read"],
 }
 
 
