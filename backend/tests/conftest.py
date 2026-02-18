@@ -13,8 +13,8 @@ from app.core.security import create_access_token, hash_password
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
+from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
 from app.users.models import User  # noqa: F401
-from app.roles.models import Role, Permission, role_permissions, user_roles  # noqa: F401
 
 # Use in-memory SQLite for tests / Usa SQLite em memoria para testes
 TEST_DATABASE_URL = "sqlite+aiosqlite://"
@@ -90,4 +90,87 @@ def auth_headers(test_user: User) -> dict[str, str]:
     Fornece headers de autenticacao com um token de acesso valido para o usuario de teste.
     """
     token = create_access_token(subject=str(test_user.id))
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+async def admin_user(db_session: AsyncSession) -> User:
+    """
+    Create an admin user with the admin role and all permissions.
+    Cria um usuario admin com o papel admin e todas as permissoes.
+    """
+    # Create permissions / Criar permissoes
+    perms = []
+    for codename, module in [
+        ("permissions:read", "permissions"),
+        ("permissions:create", "permissions"),
+        ("permissions:assign", "permissions"),
+        ("permissions:revoke", "permissions"),
+        ("roles:read", "roles"),
+        ("roles:create", "roles"),
+        ("roles:update", "roles"),
+        ("roles:delete", "roles"),
+        ("roles:assign", "roles"),
+        ("roles:revoke", "roles"),
+        ("users:read", "users"),
+    ]:
+        perm = Permission(codename=codename, module=module)
+        db_session.add(perm)
+        perms.append(perm)
+    await db_session.flush()
+
+    # Create admin role with permissions / Criar papel admin com permissoes
+    admin_role = Role(name="admin", display_name="Admin", is_system=True)
+    admin_role.permissions = perms
+    db_session.add(admin_role)
+    await db_session.flush()
+
+    # Create admin user / Criar usuario admin
+    user = User(
+        email="admin@example.com",
+        hashed_password=hash_password("adminpassword123"),
+        full_name="Admin User",
+    )
+    user.roles = [admin_role]
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def admin_headers(admin_user: User) -> dict[str, str]:
+    """
+    Provide auth headers for the admin user.
+    Fornece headers de autenticacao para o usuario admin.
+    """
+    token = create_access_token(subject=str(admin_user.id))
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+async def superuser(db_session: AsyncSession) -> User:
+    """
+    Create a superuser (bypasses all permission checks).
+    Cria um superusuario (ignora todas as verificacoes de permissao).
+    """
+    user = User(
+        email="super@example.com",
+        hashed_password=hash_password("superpassword123"),
+        full_name="Super User",
+        is_superuser=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def superuser_headers(superuser: User) -> dict[str, str]:
+    """
+    Provide auth headers for the superuser.
+    Fornece headers de autenticacao para o superusuario.
+    """
+    token = create_access_token(subject=str(superuser.id))
     return {"Authorization": f"Bearer {token}"}
