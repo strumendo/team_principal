@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.roles.models import Permission, Role
+from app.users.models import User
 
 
 @pytest.fixture
@@ -46,17 +47,17 @@ async def test_system_role(db_session: AsyncSession) -> Role:
 
 
 @pytest.mark.asyncio
-async def test_list_roles_empty(client: AsyncClient, auth_headers: dict[str, str]) -> None:
+async def test_list_roles_empty(client: AsyncClient, superuser_headers: dict[str, str]) -> None:
     """Test GET /api/v1/roles/ returns empty list / Testa GET /roles/ retorna lista vazia."""
-    response = await client.get("/api/v1/roles/", headers=auth_headers)
+    response = await client.get("/api/v1/roles/", headers=superuser_headers)
     assert response.status_code == 200
     assert response.json() == []
 
 
 @pytest.mark.asyncio
-async def test_list_roles(client: AsyncClient, auth_headers: dict[str, str], test_role: Role) -> None:
+async def test_list_roles(client: AsyncClient, superuser_headers: dict[str, str], test_role: Role) -> None:
     """Test GET /api/v1/roles/ returns roles / Testa GET /roles/ retorna papeis."""
-    response = await client.get("/api/v1/roles/", headers=auth_headers)
+    response = await client.get("/api/v1/roles/", headers=superuser_headers)
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -68,9 +69,9 @@ async def test_list_roles(client: AsyncClient, auth_headers: dict[str, str], tes
 
 
 @pytest.mark.asyncio
-async def test_get_role_by_id(client: AsyncClient, auth_headers: dict[str, str], test_role: Role) -> None:
+async def test_get_role_by_id(client: AsyncClient, superuser_headers: dict[str, str], test_role: Role) -> None:
     """Test GET /api/v1/roles/{id} returns role with permissions / Testa GET /roles/{id}."""
-    response = await client.get(f"/api/v1/roles/{test_role.id}", headers=auth_headers)
+    response = await client.get(f"/api/v1/roles/{test_role.id}", headers=superuser_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "custom_role"
@@ -79,9 +80,9 @@ async def test_get_role_by_id(client: AsyncClient, auth_headers: dict[str, str],
 
 
 @pytest.mark.asyncio
-async def test_get_role_not_found(client: AsyncClient, auth_headers: dict[str, str]) -> None:
+async def test_get_role_not_found(client: AsyncClient, superuser_headers: dict[str, str]) -> None:
     """Test GET /api/v1/roles/{id} with invalid ID returns 404 / Testa com ID invalido retorna 404."""
-    response = await client.get(f"/api/v1/roles/{uuid.uuid4()}", headers=auth_headers)
+    response = await client.get(f"/api/v1/roles/{uuid.uuid4()}", headers=superuser_headers)
     assert response.status_code == 404
 
 
@@ -89,11 +90,11 @@ async def test_get_role_not_found(client: AsyncClient, auth_headers: dict[str, s
 
 
 @pytest.mark.asyncio
-async def test_create_role(client: AsyncClient, auth_headers: dict[str, str]) -> None:
+async def test_create_role(client: AsyncClient, superuser_headers: dict[str, str]) -> None:
     """Test POST /api/v1/roles/ creates role / Testa POST /roles/ cria papel."""
     response = await client.post(
         "/api/v1/roles/",
-        headers=auth_headers,
+        headers=superuser_headers,
         json={"name": "new_role", "display_name": "New Role", "description": "A new role"},
     )
     assert response.status_code == 201
@@ -104,11 +105,11 @@ async def test_create_role(client: AsyncClient, auth_headers: dict[str, str]) ->
 
 
 @pytest.mark.asyncio
-async def test_create_role_duplicate(client: AsyncClient, auth_headers: dict[str, str]) -> None:
+async def test_create_role_duplicate(client: AsyncClient, superuser_headers: dict[str, str]) -> None:
     """Test POST /api/v1/roles/ with duplicate name returns 409 / Testa com nome duplicado retorna 409."""
     payload = {"name": "dup_role", "display_name": "Dup Role"}
-    await client.post("/api/v1/roles/", headers=auth_headers, json=payload)
-    response = await client.post("/api/v1/roles/", headers=auth_headers, json=payload)
+    await client.post("/api/v1/roles/", headers=superuser_headers, json=payload)
+    response = await client.post("/api/v1/roles/", headers=superuser_headers, json=payload)
     assert response.status_code == 409
 
 
@@ -116,11 +117,11 @@ async def test_create_role_duplicate(client: AsyncClient, auth_headers: dict[str
 
 
 @pytest.mark.asyncio
-async def test_update_role(client: AsyncClient, auth_headers: dict[str, str], test_role: Role) -> None:
+async def test_update_role(client: AsyncClient, superuser_headers: dict[str, str], test_role: Role) -> None:
     """Test PATCH /api/v1/roles/{id} updates role / Testa PATCH /roles/{id} atualiza papel."""
     response = await client.patch(
         f"/api/v1/roles/{test_role.id}",
-        headers=auth_headers,
+        headers=superuser_headers,
         json={"display_name": "Updated Role"},
     )
     assert response.status_code == 200
@@ -131,21 +132,21 @@ async def test_update_role(client: AsyncClient, auth_headers: dict[str, str], te
 
 
 @pytest.mark.asyncio
-async def test_delete_role(client: AsyncClient, auth_headers: dict[str, str], test_role: Role) -> None:
+async def test_delete_role(client: AsyncClient, superuser_headers: dict[str, str], test_role: Role) -> None:
     """Test DELETE /api/v1/roles/{id} deletes non-system role / Testa DELETE de papel nao-sistema."""
-    response = await client.delete(f"/api/v1/roles/{test_role.id}", headers=auth_headers)
+    response = await client.delete(f"/api/v1/roles/{test_role.id}", headers=superuser_headers)
     assert response.status_code == 204
 
-    response = await client.get(f"/api/v1/roles/{test_role.id}", headers=auth_headers)
+    response = await client.get(f"/api/v1/roles/{test_role.id}", headers=superuser_headers)
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_delete_system_role_forbidden(
-    client: AsyncClient, auth_headers: dict[str, str], test_system_role: Role
+    client: AsyncClient, superuser_headers: dict[str, str], test_system_role: Role
 ) -> None:
     """Test DELETE /api/v1/roles/{id} rejects system role / Testa rejeicao de exclusao de papel do sistema."""
-    response = await client.delete(f"/api/v1/roles/{test_system_role.id}", headers=auth_headers)
+    response = await client.delete(f"/api/v1/roles/{test_system_role.id}", headers=superuser_headers)
     assert response.status_code == 403
 
 
@@ -154,12 +155,12 @@ async def test_delete_system_role_forbidden(
 
 @pytest.mark.asyncio
 async def test_assign_permission_to_role(
-    client: AsyncClient, auth_headers: dict[str, str], test_role: Role, test_permission: Permission
+    client: AsyncClient, superuser_headers: dict[str, str], test_role: Role, test_permission: Permission
 ) -> None:
     """Test POST /roles/{id}/permissions assigns permission / Testa atribuicao de permissao."""
     response = await client.post(
         f"/api/v1/roles/{test_role.id}/permissions",
-        headers=auth_headers,
+        headers=superuser_headers,
         json={"permission_id": str(test_permission.id)},
     )
     assert response.status_code == 200
@@ -170,29 +171,29 @@ async def test_assign_permission_to_role(
 
 @pytest.mark.asyncio
 async def test_assign_permission_duplicate(
-    client: AsyncClient, auth_headers: dict[str, str], test_role: Role, test_permission: Permission
+    client: AsyncClient, superuser_headers: dict[str, str], test_role: Role, test_permission: Permission
 ) -> None:
     """Test assigning same permission twice returns 409 / Testa atribuicao duplicada retorna 409."""
     payload = {"permission_id": str(test_permission.id)}
-    await client.post(f"/api/v1/roles/{test_role.id}/permissions", headers=auth_headers, json=payload)
-    response = await client.post(f"/api/v1/roles/{test_role.id}/permissions", headers=auth_headers, json=payload)
+    await client.post(f"/api/v1/roles/{test_role.id}/permissions", headers=superuser_headers, json=payload)
+    response = await client.post(f"/api/v1/roles/{test_role.id}/permissions", headers=superuser_headers, json=payload)
     assert response.status_code == 409
 
 
 @pytest.mark.asyncio
 async def test_revoke_permission_from_role(
-    client: AsyncClient, auth_headers: dict[str, str], test_role: Role, test_permission: Permission
+    client: AsyncClient, superuser_headers: dict[str, str], test_role: Role, test_permission: Permission
 ) -> None:
     """Test DELETE /roles/{id}/permissions/{pid} revokes permission / Testa revogacao de permissao."""
     await client.post(
         f"/api/v1/roles/{test_role.id}/permissions",
-        headers=auth_headers,
+        headers=superuser_headers,
         json={"permission_id": str(test_permission.id)},
     )
 
     response = await client.delete(
         f"/api/v1/roles/{test_role.id}/permissions/{test_permission.id}",
-        headers=auth_headers,
+        headers=superuser_headers,
     )
     assert response.status_code == 200
     assert response.json()["permissions"] == []
@@ -200,11 +201,11 @@ async def test_revoke_permission_from_role(
 
 @pytest.mark.asyncio
 async def test_revoke_permission_not_assigned(
-    client: AsyncClient, auth_headers: dict[str, str], test_role: Role, test_permission: Permission
+    client: AsyncClient, superuser_headers: dict[str, str], test_role: Role, test_permission: Permission
 ) -> None:
     """Test revoking unassigned permission returns 404 / Testa revogacao de permissao nao atribuida."""
     response = await client.delete(
         f"/api/v1/roles/{test_role.id}/permissions/{test_permission.id}",
-        headers=auth_headers,
+        headers=superuser_headers,
     )
     assert response.status_code == 404

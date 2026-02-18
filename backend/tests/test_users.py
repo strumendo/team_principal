@@ -40,19 +40,21 @@ async def test_update_me(client: AsyncClient, test_user: User, auth_headers: dic
 
 
 @pytest.mark.asyncio
-async def test_get_user_by_id(client: AsyncClient, test_user: User, auth_headers: dict[str, str]) -> None:
-    """Test GET /api/v1/users/{id} returns user / Testa GET /users/{id} retorna usuario."""
-    response = await client.get(f"/api/v1/users/{test_user.id}", headers=auth_headers)
+async def test_get_user_by_id(
+    client: AsyncClient, admin_user: User, admin_headers: dict[str, str]
+) -> None:
+    """Test GET /api/v1/users/{id} returns user (requires users:read) / Testa GET /users/{id}."""
+    response = await client.get(f"/api/v1/users/{admin_user.id}", headers=admin_headers)
     assert response.status_code == 200
     data = response.json()
-    assert data["email"] == test_user.email
+    assert data["email"] == admin_user.email
 
 
 @pytest.mark.asyncio
-async def test_get_user_by_id_not_found(client: AsyncClient, auth_headers: dict[str, str]) -> None:
+async def test_get_user_by_id_not_found(client: AsyncClient, superuser_headers: dict[str, str]) -> None:
     """Test GET /api/v1/users/{id} with invalid ID returns 404 / Testa GET /users/{id} com ID invalido retorna 404."""
     response = await client.get(
         "/api/v1/users/00000000-0000-0000-0000-000000000000",
-        headers=auth_headers,
+        headers=superuser_headers,
     )
     assert response.status_code == 404
