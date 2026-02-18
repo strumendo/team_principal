@@ -24,7 +24,9 @@ async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> User:
     return user
 
 
-async def update_user(db: AsyncSession, user: User, full_name: str | None = None, avatar_url: str | None = None) -> User:
+async def update_user(
+    db: AsyncSession, user: User, full_name: str | None = None, avatar_url: str | None = None
+) -> User:
     """
     Update user profile fields.
     Atualiza campos do perfil do usuario.

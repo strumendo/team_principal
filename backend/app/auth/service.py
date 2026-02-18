@@ -83,8 +83,8 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> dict[str
 
     try:
         user_id = uuid_mod.UUID(user_id_str)
-    except ValueError:
-        raise CredentialsException("Invalid refresh token")
+    except ValueError as err:
+        raise CredentialsException("Invalid refresh token") from err
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
