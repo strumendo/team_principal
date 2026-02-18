@@ -39,6 +39,10 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"app/config.py" = ["N802"]
 
 [tool.mypy]
 python_version = "3.12"

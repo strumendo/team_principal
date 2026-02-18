@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import require_permissions
 from app.db.session import get_db
+from app.roles.models import Permission, Role
 from app.roles.schemas import (
     PermissionCreateRequest,
     PermissionResponse,
@@ -18,9 +19,11 @@ from app.roles.schemas import (
     RolePermissionRequest,
     RoleResponse,
     RoleUpdateRequest,
+    UserRoleAssignRequest,
 )
 from app.roles.service import (
     assign_permission_to_role,
+    assign_role_to_user,
     create_permission,
     create_role,
     delete_role,
@@ -28,13 +31,16 @@ from app.roles.service import (
     get_role_by_id,
     list_permissions,
     list_roles,
+    list_user_roles,
     revoke_permission_from_role,
+    revoke_role_from_user,
     update_role,
 )
 from app.users.models import User
 
 permissions_router = APIRouter(prefix="/api/v1/permissions", tags=["permissions"])
 roles_router = APIRouter(prefix="/api/v1/roles", tags=["roles"])
+user_roles_router = APIRouter(prefix="/api/v1/users", tags=["user-roles"])
 
 
 # --- Permissions endpoints / Endpoints de permissoes ---
@@ -45,7 +51,7 @@ async def read_permissions(
     module: str | None = Query(default=None, description="Filter by module / Filtrar por modulo"),
     _current_user: User = Depends(require_permissions("permissions:read")),
     db: AsyncSession = Depends(get_db),
-) -> list:
+) -> list[Permission]:
     """
     List all permissions, optionally filtered by module.
     Lista todas as permissoes, opcionalmente filtradas por modulo.
@@ -88,7 +94,7 @@ async def create_new_permission(
 async def read_roles(
     _current_user: User = Depends(require_permissions("roles:read")),
     db: AsyncSession = Depends(get_db),
-) -> list:
+) -> list[Role]:
     """
     List all roles (without permissions).
     Lista todos os papeis (sem permissoes).
@@ -182,3 +188,49 @@ async def revoke_permission(
     Revoga uma permissao de um papel.
     """
     return await revoke_permission_from_role(db, role_id, permission_id)  # type: ignore[return-value]
+
+
+# --- User-role endpoints / Endpoints de usuario-papel ---
+
+
+@user_roles_router.get("/{user_id}/roles", response_model=list[RoleListResponse])
+async def read_user_roles(
+    user_id: uuid.UUID,
+    _current_user: User = Depends(require_permissions("roles:read")),
+    db: AsyncSession = Depends(get_db),
+) -> list[Role]:
+    """
+    List all roles assigned to a user.
+    Lista todos os papeis atribuidos a um usuario.
+    """
+    return await list_user_roles(db, user_id)
+
+
+@user_roles_router.post("/{user_id}/roles", response_model=list[RoleListResponse])
+async def assign_user_role(
+    user_id: uuid.UUID,
+    body: UserRoleAssignRequest,
+    current_user: User = Depends(require_permissions("roles:assign")),
+    db: AsyncSession = Depends(get_db),
+) -> list[Role]:
+    """
+    Assign a role to a user.
+    Atribui um papel a um usuario.
+    """
+    await assign_role_to_user(db, user_id, body.role_id, assigned_by=current_user.id)
+    return await list_user_roles(db, user_id)
+
+
+@user_roles_router.delete("/{user_id}/roles/{role_id}", response_model=list[RoleListResponse])
+async def revoke_user_role(
+    user_id: uuid.UUID,
+    role_id: uuid.UUID,
+    _current_user: User = Depends(require_permissions("roles:revoke")),
+    db: AsyncSession = Depends(get_db),
+) -> list[Role]:
+    """
+    Revoke a role from a user.
+    Revoga um papel de um usuario.
+    """
+    await revoke_role_from_user(db, user_id, role_id)
+    return await list_user_roles(db, user_id)

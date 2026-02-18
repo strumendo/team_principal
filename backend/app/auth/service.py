@@ -77,14 +77,14 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> dict[str
     if payload.get("type") != "refresh":
         raise CredentialsException("Invalid token type")
 
-    user_id_str = payload.get("sub")
-    if user_id_str is None:
+    raw_sub = payload.get("sub")
+    if not isinstance(raw_sub, str):
         raise CredentialsException("Invalid refresh token")
 
     try:
-        user_id = uuid_mod.UUID(user_id_str)
-    except ValueError:
-        raise CredentialsException("Invalid refresh token")
+        user_id = uuid_mod.UUID(raw_sub)
+    except ValueError as err:
+        raise CredentialsException("Invalid refresh token") from err
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()

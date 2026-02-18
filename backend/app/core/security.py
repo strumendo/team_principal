@@ -3,7 +3,7 @@ Security utilities: JWT token management and password hashing.
 Utilitarios de seguranca: gerenciamento de tokens JWT e hashing de senha.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
@@ -32,10 +32,11 @@ def create_access_token(subject: str, expires_delta: timedelta | None = None) ->
     Create a JWT access token.
     Cria um token de acesso JWT.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expire = now + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode = {"sub": subject, "exp": expire, "type": "access"}
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    encoded: str = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return encoded
 
 
 def create_refresh_token(subject: str, expires_delta: timedelta | None = None) -> str:
@@ -43,18 +44,22 @@ def create_refresh_token(subject: str, expires_delta: timedelta | None = None) -
     Create a JWT refresh token.
     Cria um token de atualizacao JWT.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expire = now + (expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
     to_encode = {"sub": subject, "exp": expire, "type": "refresh"}
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    encoded: str = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return encoded
 
 
-def decode_token(token: str) -> dict | None:
+def decode_token(token: str) -> dict[str, object] | None:
     """
     Decode and validate a JWT token. Returns payload or None if invalid.
     Decodifica e valida um token JWT. Retorna payload ou None se invalido.
     """
     try:
-        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        payload: dict[str, object] = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+        )
+        return payload
     except JWTError:
         return None

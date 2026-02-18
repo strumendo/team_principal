@@ -78,3 +78,9 @@ class RolePermissionRequest(BaseModel):
     """Role-permission assignment request body / Corpo da requisicao de atribuicao de permissao a papel."""
 
     permission_id: uuid.UUID
+
+
+class UserRoleAssignRequest(BaseModel):
+    """User-role assignment request body / Corpo da requisicao de atribuicao de papel a usuario."""
+
+    role_id: uuid.UUID

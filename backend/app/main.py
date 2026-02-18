@@ -3,16 +3,16 @@ FastAPI application factory.
 Fabrica da aplicacao FastAPI.
 """
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
 from app.auth.router import router as auth_router
+from app.config import settings
 from app.health.router import router as health_router
-from app.roles.router import permissions_router, roles_router
+from app.roles.router import permissions_router, roles_router, user_roles_router
 from app.users.router import router as users_router
 
 
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(users_router)
     app.include_router(permissions_router)
     app.include_router(roles_router)
+    app.include_router(user_roles_router)
 
     return app
 
