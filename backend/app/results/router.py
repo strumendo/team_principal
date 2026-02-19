@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import require_permissions
 from app.db.session import get_db
 from app.results.schemas import (
+    ChampionshipStandingResponse,
     RaceResultCreateRequest,
     RaceResultDetailResponse,
     RaceResultListResponse,
@@ -20,6 +21,7 @@ from app.results.schemas import (
 from app.results.service import (
     create_result,
     delete_result,
+    get_championship_standings,
     get_result_by_id,
     list_race_results,
     update_result,
@@ -103,6 +105,19 @@ async def update_existing_result(
         dsq=body.dsq,
         notes=body.notes,
     )
+
+
+@router.get("/api/v1/championships/{championship_id}/standings", response_model=list[ChampionshipStandingResponse])
+async def read_championship_standings(
+    championship_id: uuid.UUID,
+    _current_user: User = Depends(require_permissions("results:read")),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:  # type: ignore[type-arg]
+    """
+    Get championship standings aggregated from race results.
+    Obtem classificacao do campeonato agregada dos resultados de corrida.
+    """
+    return await get_championship_standings(db, championship_id)
 
 
 @router.delete("/api/v1/results/{result_id}", status_code=204)
