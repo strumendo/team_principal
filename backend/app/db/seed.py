@@ -106,6 +106,31 @@ SYSTEM_PERMISSIONS = [
         "module": "teams",
         "description": "Manage team members / Gerenciar membros da equipe",
     },
+    {
+        "codename": "championships:read",
+        "module": "championships",
+        "description": "Read championships / Ler campeonatos",
+    },
+    {
+        "codename": "championships:create",
+        "module": "championships",
+        "description": "Create championships / Criar campeonatos",
+    },
+    {
+        "codename": "championships:update",
+        "module": "championships",
+        "description": "Update championships / Atualizar campeonatos",
+    },
+    {
+        "codename": "championships:delete",
+        "module": "championships",
+        "description": "Delete championships / Excluir campeonatos",
+    },
+    {
+        "codename": "championships:manage_entries",
+        "module": "championships",
+        "description": "Manage championship entries / Gerenciar inscricoes de campeonato",
+    },
 ]
 
 
@@ -145,7 +170,7 @@ async def seed_permissions(session: AsyncSession) -> None:
 # admin gets all permissions, pilot gets self-access permissions
 ROLE_PERMISSIONS: dict[str, list[str]] = {
     "admin": [p["codename"] for p in SYSTEM_PERMISSIONS],
-    "pilot": ["users:read_self", "users:update_self", "teams:read"],
+    "pilot": ["users:read_self", "users:update_self", "teams:read", "championships:read"],
 }
 
 
