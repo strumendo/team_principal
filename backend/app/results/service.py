@@ -4,10 +4,12 @@ Logica de negocios de resultados de corrida.
 """
 
 import uuid
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.championships.models import Championship
 from app.core.exceptions import ConflictException, NotFoundException
 from app.races.models import Race, RaceStatus, race_entries
 from app.results.models import RaceResult
@@ -174,3 +176,68 @@ async def delete_result(db: AsyncSession, race_result: RaceResult) -> None:
     """
     await db.delete(race_result)
     await db.commit()
+
+
+async def get_championship_standings(db: AsyncSession, championship_id: uuid.UUID) -> list[dict[str, Any]]:
+    """
+    Compute championship standings by aggregating race results.
+    Excludes DSQ results. Wins counted via separate query for SQLite compatibility.
+
+    Calcula classificacao do campeonato agregando resultados de corrida.
+    Exclui resultados DSQ. Vitorias contadas via query separada para compatibilidade com SQLite.
+    """
+    # Validate championship exists / Valida que o campeonato existe
+    champ_query = await db.execute(select(Championship).where(Championship.id == championship_id))
+    if champ_query.scalar_one_or_none() is None:
+        raise NotFoundException("Championship not found")
+
+    # Main query: total points and races scored / Query principal: pontos totais e corridas pontuadas
+    points_stmt = (
+        select(
+            RaceResult.team_id,
+            Team.name.label("team_name"),
+            Team.display_name.label("team_display_name"),
+            func.sum(RaceResult.points).label("total_points"),
+            func.count(RaceResult.id).label("races_scored"),
+        )
+        .join(Race, RaceResult.race_id == Race.id)
+        .join(Team, RaceResult.team_id == Team.id)
+        .where(Race.championship_id == championship_id, RaceResult.dsq == False)  # noqa: E712
+        .group_by(RaceResult.team_id, Team.name, Team.display_name)
+        .order_by(func.sum(RaceResult.points).desc())
+    )
+    points_result = await db.execute(points_stmt)
+    points_rows = points_result.all()
+
+    # Wins query (separate for SQLite compat) / Query de vitorias (separada para compatibilidade SQLite)
+    wins_stmt = (
+        select(
+            RaceResult.team_id,
+            func.count(RaceResult.id).label("wins"),
+        )
+        .join(Race, RaceResult.race_id == Race.id)
+        .where(
+            Race.championship_id == championship_id,
+            RaceResult.position == 1,
+            RaceResult.dsq == False,  # noqa: E712
+        )
+        .group_by(RaceResult.team_id)
+    )
+    wins_result = await db.execute(wins_stmt)
+    wins_map: dict[uuid.UUID, int] = {row.team_id: row.wins for row in wins_result.all()}
+
+    standings: list[dict[str, Any]] = []
+    for idx, row in enumerate(points_rows, start=1):
+        standings.append(
+            {
+                "position": idx,
+                "team_id": row.team_id,
+                "team_name": row.team_name,
+                "team_display_name": row.team_display_name,
+                "total_points": float(row.total_points),
+                "races_scored": row.races_scored,
+                "wins": wins_map.get(row.team_id, 0),
+            }
+        )
+
+    return standings
