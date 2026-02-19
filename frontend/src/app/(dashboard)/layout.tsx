@@ -22,6 +22,14 @@ export default function DashboardLayout({
                 Dashboard
               </a>
             </li>
+            <li>
+              <a
+                href="/championships"
+                className="block rounded px-3 py-2 hover:bg-gray-800"
+              >
+                Championships / Campeonatos
+              </a>
+            </li>
           </ul>
         </nav>
       </aside>
