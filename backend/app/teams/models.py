@@ -41,6 +41,12 @@ class Team(Base):
         back_populates="teams",
         lazy="selectin",
     )
+    races: Mapped[list["Race"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Race",
+        secondary="race_entries",
+        back_populates="teams",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<Team(id={self.id}, name={self.name})>"
