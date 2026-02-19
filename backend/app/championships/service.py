@@ -5,12 +5,14 @@ Logica de negocios de campeonatos.
 
 import uuid
 from datetime import date
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.championships.models import Championship, ChampionshipStatus
+from app.championships.models import Championship, ChampionshipStatus, championship_entries
 from app.core.exceptions import ConflictException, NotFoundException
+from app.teams.models import Team
 
 
 async def list_championships(
@@ -43,6 +45,7 @@ async def get_championship_by_id(db: AsyncSession, championship_id: uuid.UUID) -
     championship = result.scalar_one_or_none()
     if championship is None:
         raise NotFoundException("Championship not found")
+    await db.refresh(championship, ["teams"])
     return championship
 
 
@@ -115,8 +118,98 @@ async def update_championship(
 
 async def delete_championship(db: AsyncSession, championship: Championship) -> None:
     """
-    Delete a championship.
-    Exclui um campeonato.
+    Delete a championship. Clears entries before deleting.
+    Exclui um campeonato. Limpa inscricoes antes de excluir.
     """
+    championship.teams.clear()
+    await db.flush()
     await db.delete(championship)
     await db.commit()
+
+
+# --- Entry services / Servicos de inscricao ---
+
+
+async def list_championship_entries(db: AsyncSession, championship_id: uuid.UUID) -> list[dict[str, Any]]:
+    """
+    List all entries of a championship with registration date.
+    Lista todas as inscricoes de um campeonato com data de registro.
+    """
+    await get_championship_by_id(db, championship_id)
+
+    stmt = (
+        select(
+            Team.id.label("team_id"),
+            Team.name.label("team_name"),
+            Team.display_name.label("team_display_name"),
+            Team.is_active.label("team_is_active"),
+            championship_entries.c.registered_at,
+        )
+        .join(Team, championship_entries.c.team_id == Team.id)
+        .where(championship_entries.c.championship_id == championship_id)
+        .order_by(Team.name)
+    )
+    result = await db.execute(stmt)
+    return [row._asdict() for row in result.all()]
+
+
+async def add_championship_entry(
+    db: AsyncSession, championship_id: uuid.UUID, team_id: uuid.UUID
+) -> list[dict[str, Any]]:
+    """
+    Add a team to a championship. Raises NotFoundException if team/championship not found.
+    Raises ConflictException if team already enrolled.
+
+    Adiciona uma equipe a um campeonato. Lanca NotFoundException se equipe/campeonato nao encontrado.
+    Lanca ConflictException se equipe ja inscrita.
+    """
+    await get_championship_by_id(db, championship_id)
+
+    result = await db.execute(select(Team).where(Team.id == team_id))
+    if result.scalar_one_or_none() is None:
+        raise NotFoundException("Team not found")
+
+    existing = await db.execute(
+        select(championship_entries).where(
+            championship_entries.c.championship_id == championship_id,
+            championship_entries.c.team_id == team_id,
+        )
+    )
+    if existing.first() is not None:
+        raise ConflictException("Team is already enrolled in this championship")
+
+    await db.execute(
+        championship_entries.insert().values(championship_id=championship_id, team_id=team_id)
+    )
+    await db.commit()
+
+    return await list_championship_entries(db, championship_id)
+
+
+async def remove_championship_entry(
+    db: AsyncSession, championship_id: uuid.UUID, team_id: uuid.UUID
+) -> list[dict[str, Any]]:
+    """
+    Remove a team from a championship. Raises NotFoundException if entry not found.
+    Remove uma equipe de um campeonato. Lanca NotFoundException se inscricao nao encontrada.
+    """
+    await get_championship_by_id(db, championship_id)
+
+    existing = await db.execute(
+        select(championship_entries).where(
+            championship_entries.c.championship_id == championship_id,
+            championship_entries.c.team_id == team_id,
+        )
+    )
+    if existing.first() is None:
+        raise NotFoundException("Team is not enrolled in this championship")
+
+    await db.execute(
+        delete(championship_entries).where(
+            championship_entries.c.championship_id == championship_id,
+            championship_entries.c.team_id == team_id,
+        )
+    )
+    await db.commit()
+
+    return await list_championship_entries(db, championship_id)

@@ -12,15 +12,20 @@ from app.championships.models import ChampionshipStatus
 from app.championships.schemas import (
     ChampionshipCreateRequest,
     ChampionshipDetailResponse,
+    ChampionshipEntryRequest,
+    ChampionshipEntryResponse,
     ChampionshipListResponse,
     ChampionshipResponse,
     ChampionshipUpdateRequest,
 )
 from app.championships.service import (
+    add_championship_entry,
     create_championship,
     delete_championship,
     get_championship_by_id,
+    list_championship_entries,
     list_championships,
+    remove_championship_entry,
     update_championship,
 )
 from app.core.dependencies import require_permissions
@@ -118,3 +123,47 @@ async def delete_existing_championship(
     championship = await get_championship_by_id(db, championship_id)
     await delete_championship(db, championship)
     return Response(status_code=204)
+
+
+# --- Entry endpoints / Endpoints de inscricao ---
+
+
+@router.get("/{championship_id}/entries", response_model=list[ChampionshipEntryResponse])
+async def read_championship_entries(
+    championship_id: uuid.UUID,
+    _current_user: User = Depends(require_permissions("championships:read")),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:  # type: ignore[type-arg]
+    """
+    List all entries of a championship.
+    Lista todas as inscricoes de um campeonato.
+    """
+    return await list_championship_entries(db, championship_id)
+
+
+@router.post("/{championship_id}/entries", response_model=list[ChampionshipEntryResponse])
+async def add_entry(
+    championship_id: uuid.UUID,
+    body: ChampionshipEntryRequest,
+    _current_user: User = Depends(require_permissions("championships:manage_entries")),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:  # type: ignore[type-arg]
+    """
+    Add a team to a championship.
+    Adiciona uma equipe a um campeonato.
+    """
+    return await add_championship_entry(db, championship_id, body.team_id)
+
+
+@router.delete("/{championship_id}/entries/{team_id}", response_model=list[ChampionshipEntryResponse])
+async def remove_entry(
+    championship_id: uuid.UUID,
+    team_id: uuid.UUID,
+    _current_user: User = Depends(require_permissions("championships:manage_entries")),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:  # type: ignore[type-arg]
+    """
+    Remove a team from a championship.
+    Remove uma equipe de um campeonato.
+    """
+    return await remove_championship_entry(db, championship_id, team_id)
