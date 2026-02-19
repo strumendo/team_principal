@@ -104,6 +104,12 @@ backend/
 │   │   ├── models.py        # Race model, RaceStatus enum, race_entries table
 │   │   └── schemas.py       # 10 Pydantic schemas
 │   │
+│   ├── results/             # Results module / Modulo de resultados
+│   │   ├── router.py        # CRUD + standings endpoints (6 endpoints)
+│   │   ├── service.py       # CRUD + standings computation business logic
+│   │   ├── models.py        # RaceResult model
+│   │   └── schemas.py       # 8 Pydantic schemas
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -121,6 +127,8 @@ backend/
 │   ├── test_championship_entries.py # 13 tests
 │   ├── test_races.py              # 22 tests
 │   ├── test_race_entries.py       # 13 tests
+│   ├── test_race_results.py       # 23 tests
+│   ├── test_championship_standings.py # 9 tests
 │   └── test_health.py             # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -187,6 +195,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `teams_router` | `/api/v1/teams` | `app/teams/router.py` |
 | `championships_router` | `/api/v1/championships` | `app/championships/router.py` |
 | `races_router` | `/api/v1/championships/.../races`, `/api/v1/races` | `app/races/router.py` |
+| `results_router` | `/api/v1/races/.../results`, `/api/v1/results`, `/api/v1/championships/.../standings` | `app/results/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -237,6 +246,12 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | GET | `/api/v1/races/{id}/entries` | `races:read` | races |
 | POST | `/api/v1/races/{id}/entries` | `races:manage_entries` | races |
 | DELETE | `/api/v1/races/{id}/entries/{tid}` | `races:manage_entries` | races |
+| GET | `/api/v1/races/{id}/results` | `results:read` | results |
+| POST | `/api/v1/races/{id}/results` | `results:create` | results |
+| GET | `/api/v1/results/{id}` | `results:read` | results |
+| PATCH | `/api/v1/results/{id}` | `results:update` | results |
+| DELETE | `/api/v1/results/{id}` | `results:delete` | results |
+| GET | `/api/v1/championships/{id}/standings` | `results:read` | results |
 
 ---
 
@@ -401,6 +416,25 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 │ team_id      PK FK      │──→ teams.id (CASCADE)
 │ registered_at           │
 └─────────────────────────┘
+
+┌─────────────────────────┐
+│     race_results         │
+├─────────────────────────┤
+│ id           PK          │
+│ race_id      FK IDX      │──→ races.id (CASCADE)
+│ team_id      FK IDX      │──→ teams.id (CASCADE)
+│ position     INT         │
+│ points       FLOAT       │ default 0.0
+│ laps_completed INT       │ nullable
+│ fastest_lap  BOOL        │ default false
+│ dnf          BOOL        │ default false
+│ dsq          BOOL        │ default false
+│ notes        VARCHAR(512)│ nullable
+│ created_at               │
+│ updated_at               │
+├─────────────────────────┤
+│ UQ(race_id, team_id)    │
+└─────────────────────────┘
 ```
 
 ### Conventions / Convencoes
@@ -467,7 +501,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (157) │  ← httpx AsyncClient against test app
+│ Integration (189) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
