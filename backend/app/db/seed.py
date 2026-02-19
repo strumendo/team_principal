@@ -140,6 +140,22 @@ SYSTEM_PERMISSIONS = [
         "module": "races",
         "description": "Manage race entries / Gerenciar inscricoes de corrida",
     },
+    {"codename": "results:read", "module": "results", "description": "Read race results / Ler resultados de corrida"},
+    {
+        "codename": "results:create",
+        "module": "results",
+        "description": "Create race results / Criar resultados de corrida",
+    },
+    {
+        "codename": "results:update",
+        "module": "results",
+        "description": "Update race results / Atualizar resultados de corrida",
+    },
+    {
+        "codename": "results:delete",
+        "module": "results",
+        "description": "Delete race results / Excluir resultados de corrida",
+    },
 ]
 
 
@@ -179,7 +195,7 @@ async def seed_permissions(session: AsyncSession) -> None:
 # admin gets all permissions, pilot gets self-access permissions
 ROLE_PERMISSIONS: dict[str, list[str]] = {
     "admin": [p["codename"] for p in SYSTEM_PERMISSIONS],
-    "pilot": ["users:read_self", "users:update_self", "teams:read", "championships:read", "races:read"],
+    "pilot": ["users:read_self", "users:update_self", "teams:read", "championships:read", "races:read", "results:read"],
 }
 
 
