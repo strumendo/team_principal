@@ -27,8 +27,8 @@ async def list_races(
     Lista todas as corridas de um campeonato, opcionalmente filtradas.
     """
     # Validate championship exists / Valida que o campeonato existe
-    result = await db.execute(select(Championship).where(Championship.id == championship_id))
-    if result.scalar_one_or_none() is None:
+    champ_result = await db.execute(select(Championship).where(Championship.id == championship_id))
+    if champ_result.scalar_one_or_none() is None:
         raise NotFoundException("Championship not found")
 
     stmt = select(Race).where(Race.championship_id == championship_id).order_by(Race.round_number)
@@ -71,13 +71,13 @@ async def create_race(
     Cria uma nova corrida dentro de um campeonato. Lanca ConflictException se o nome ja existe no campeonato.
     """
     # Validate championship exists / Valida que o campeonato existe
-    result = await db.execute(select(Championship).where(Championship.id == championship_id))
-    if result.scalar_one_or_none() is None:
+    champ_result = await db.execute(select(Championship).where(Championship.id == championship_id))
+    if champ_result.scalar_one_or_none() is None:
         raise NotFoundException("Championship not found")
 
     # Check unique name within championship / Verifica nome unico dentro do campeonato
-    result = await db.execute(select(Race).where(Race.championship_id == championship_id, Race.name == name))
-    if result.scalar_one_or_none() is not None:
+    name_result = await db.execute(select(Race).where(Race.championship_id == championship_id, Race.name == name))
+    if name_result.scalar_one_or_none() is not None:
         raise ConflictException("Race name already exists in this championship")
 
     race = Race(
