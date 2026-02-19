@@ -88,8 +88,12 @@ async def update_existing_team(
     """
     team = await get_team_by_id(db, team_id)
     return await update_team(  # type: ignore[return-value]
-        db, team, display_name=body.display_name, description=body.description,
-        logo_url=body.logo_url, is_active=body.is_active
+        db,
+        team,
+        display_name=body.display_name,
+        description=body.description,
+        logo_url=body.logo_url,
+        is_active=body.is_active,
     )
 
 

@@ -178,9 +178,7 @@ async def add_championship_entry(
     if existing.first() is not None:
         raise ConflictException("Team is already enrolled in this championship")
 
-    await db.execute(
-        championship_entries.insert().values(championship_id=championship_id, team_id=team_id)
-    )
+    await db.execute(championship_entries.insert().values(championship_id=championship_id, team_id=team_id))
     await db.commit()
 
     return await list_championship_entries(db, championship_id)

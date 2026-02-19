@@ -37,9 +37,7 @@ async def get_permission_by_id(db: AsyncSession, permission_id: uuid.UUID) -> Pe
     return permission
 
 
-async def create_permission(
-    db: AsyncSession, codename: str, module: str, description: str | None = None
-) -> Permission:
+async def create_permission(db: AsyncSession, codename: str, module: str, description: str | None = None) -> Permission:
     """
     Create a new permission. Raises ConflictException if codename already exists.
     Cria uma nova permissao. Lanca ConflictException se codename ja existe.
@@ -79,9 +77,7 @@ async def get_role_by_id(db: AsyncSession, role_id: uuid.UUID) -> Role:
     return role
 
 
-async def create_role(
-    db: AsyncSession, name: str, display_name: str, description: str | None = None
-) -> Role:
+async def create_role(db: AsyncSession, name: str, display_name: str, description: str | None = None) -> Role:
     """
     Create a new role. Raises ConflictException if name already exists.
     Cria um novo papel. Lanca ConflictException se o nome ja existe.

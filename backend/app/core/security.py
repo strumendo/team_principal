@@ -57,9 +57,7 @@ def decode_token(token: str) -> dict[str, object] | None:
     Decodifica e valida um token JWT. Retorna payload ou None se invalido.
     """
     try:
-        payload: dict[str, object] = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-        )
+        payload: dict[str, object] = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         return payload
     except JWTError:
         return None
