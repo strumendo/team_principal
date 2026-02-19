@@ -98,6 +98,12 @@ backend/
 │   │   ├── models.py        # Championship model, ChampionshipStatus enum, championship_entries table
 │   │   └── schemas.py       # 9 Pydantic schemas
 │   │
+│   ├── races/               # Races module / Modulo de corridas
+│   │   ├── router.py        # CRUD + entry endpoints (8 endpoints)
+│   │   ├── service.py       # CRUD + entry management business logic
+│   │   ├── models.py        # Race model, RaceStatus enum, race_entries table
+│   │   └── schemas.py       # 10 Pydantic schemas
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -113,6 +119,8 @@ backend/
 │   ├── test_team_members.py       # 14 tests
 │   ├── test_championships.py      # 20 tests
 │   ├── test_championship_entries.py # 13 tests
+│   ├── test_races.py              # 22 tests
+│   ├── test_race_entries.py       # 13 tests
 │   └── test_health.py             # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -178,6 +186,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `user_roles_router` | `/api/v1/users` | `app/roles/router.py` |
 | `teams_router` | `/api/v1/teams` | `app/teams/router.py` |
 | `championships_router` | `/api/v1/championships` | `app/championships/router.py` |
+| `races_router` | `/api/v1/championships/.../races`, `/api/v1/races` | `app/races/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -220,6 +229,14 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | GET | `/api/v1/championships/{id}/entries` | `championships:read` | championships |
 | POST | `/api/v1/championships/{id}/entries` | `championships:manage_entries` | championships |
 | DELETE | `/api/v1/championships/{id}/entries/{tid}` | `championships:manage_entries` | championships |
+| GET | `/api/v1/championships/{id}/races` | `races:read` | races |
+| POST | `/api/v1/championships/{id}/races` | `races:create` | races |
+| GET | `/api/v1/races/{id}` | `races:read` | races |
+| PATCH | `/api/v1/races/{id}` | `races:update` | races |
+| DELETE | `/api/v1/races/{id}` | `races:delete` | races |
+| GET | `/api/v1/races/{id}/entries` | `races:read` | races |
+| POST | `/api/v1/races/{id}/entries` | `races:manage_entries` | races |
+| DELETE | `/api/v1/races/{id}/entries/{tid}` | `races:manage_entries` | races |
 
 ---
 
@@ -352,7 +369,38 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 │ is_active       │
 │ created_at      │
 │ updated_at      │
-└─────────────────┘
+└────────┬────────┘
+         │
+         │ championships.id (FK)
+         │
+┌────────┴────────┐
+│     races        │
+├─────────────────┤
+│ id          PK  │
+│ champ_id    FK  │ UQ(championship_id, name)
+│ name        IDX │
+│ display_name    │
+│ description     │
+│ round_number    │
+│ status          │ scheduled/qualifying/active/finished/cancelled
+│ scheduled_at    │
+│ track_name      │
+│ track_country   │
+│ laps_total      │
+│ is_active       │
+│ created_at      │
+│ updated_at      │
+└────────┬────────┘
+         │
+         │ races.id (PK)
+         │
+┌────────┴────────────────┐
+│     race_entries         │
+├─────────────────────────┤
+│ race_id      PK FK      │──→ races.id (CASCADE)
+│ team_id      PK FK      │──→ teams.id (CASCADE)
+│ registered_at           │
+└─────────────────────────┘
 ```
 
 ### Conventions / Convencoes
@@ -380,7 +428,8 @@ frontend/src/
 │   │   └── register/
 │   ├── (dashboard)/     # Protected pages / Paginas protegidas
 │   │   ├── dashboard/
-│   │   └── championships/  # List, detail, create, edit pages
+│   │   ├── championships/  # List, detail, create, edit pages
+│   │   └── races/          # Detail, edit pages (list/create under championships)
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
 │   ├── ui/              # Reusable UI components / Componentes UI reutilizaveis
@@ -418,7 +467,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (122) │  ← httpx AsyncClient against test app
+│ Integration (157) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
