@@ -7,10 +7,19 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, Uuid, func
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Table, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+# Association table for M:N race <-> team / Tabela associativa corrida <-> equipe
+race_entries = Table(
+    "race_entries",
+    Base.metadata,
+    Column("race_id", Uuid, ForeignKey("races.id", ondelete="CASCADE"), primary_key=True),
+    Column("team_id", Uuid, ForeignKey("teams.id", ondelete="CASCADE"), primary_key=True),
+    Column("registered_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+)
 
 
 class RaceStatus(str, enum.Enum):
@@ -62,6 +71,9 @@ class Race(Base):
     # Relationships / Relacionamentos
     championship: Mapped["Championship"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Championship", back_populates="races", lazy="selectin"
+    )
+    teams: Mapped[list["Team"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Team", secondary=race_entries, back_populates="races", lazy="selectin"
     )
 
     def __repr__(self) -> str:
