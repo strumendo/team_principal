@@ -1,0 +1,164 @@
+/**
+ * API client wrapper for the FastAPI backend.
+ * Wrapper do cliente API para o backend FastAPI.
+ */
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+/**
+ * Make an authenticated API request.
+ * Faz uma requisicao autenticada para a API.
+ */
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  token?: string,
+): Promise<ApiResponse<T>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      return {
+        error: errorData?.detail || `Request failed with status ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    return { data };
+  } catch {
+    return { error: "Network error. Please try again." };
+  }
+}
+
+/**
+ * Auth API calls / Chamadas da API de autenticacao.
+ */
+export const authApi = {
+  login: (email: string, password: string) =>
+    apiRequest<{ access_token: string; refresh_token: string }>(
+      "/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      },
+    ),
+
+  register: (email: string, password: string, fullName: string) =>
+    apiRequest<{ access_token: string; refresh_token: string }>(
+      "/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password, full_name: fullName }),
+      },
+    ),
+
+  refresh: (refreshToken: string) =>
+    apiRequest<{ access_token: string; refresh_token: string }>(
+      "/auth/refresh",
+      {
+        method: "POST",
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      },
+    ),
+};
+
+/**
+ * Users API calls / Chamadas da API de usuarios.
+ */
+export const usersApi = {
+  getMe: (token: string) => apiRequest<{ id: string; email: string; full_name: string }>("/users/me", {}, token),
+};
+
+/**
+ * Championships API calls / Chamadas da API de campeonatos.
+ */
+import type {
+  ChampionshipListItem,
+  ChampionshipDetail,
+  ChampionshipEntry,
+} from "@/types/championship";
+
+export const championshipsApi = {
+  list: (token: string, params?: { status?: string; season_year?: number; is_active?: boolean }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.season_year) query.set("season_year", String(params.season_year));
+    if (params?.is_active !== undefined) query.set("is_active", String(params.is_active));
+    const qs = query.toString();
+    return apiRequest<ChampionshipListItem[]>(`/championships/${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  get: (token: string, id: string) =>
+    apiRequest<ChampionshipDetail>(`/championships/${id}`, {}, token),
+
+  create: (
+    token: string,
+    data: {
+      name: string;
+      display_name: string;
+      season_year: number;
+      description?: string;
+      status?: string;
+      start_date?: string;
+      end_date?: string;
+    },
+  ) =>
+    apiRequest<ChampionshipListItem>("/championships/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  update: (
+    token: string,
+    id: string,
+    data: {
+      display_name?: string;
+      description?: string;
+      season_year?: number;
+      status?: string;
+      start_date?: string;
+      end_date?: string;
+      is_active?: boolean;
+    },
+  ) =>
+    apiRequest<ChampionshipListItem>(`/championships/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  delete: (token: string, id: string) =>
+    apiRequest<void>(`/championships/${id}`, { method: "DELETE" }, token),
+
+  listEntries: (token: string, id: string) =>
+    apiRequest<ChampionshipEntry[]>(`/championships/${id}/entries`, {}, token),
+
+  addEntry: (token: string, id: string, teamId: string) =>
+    apiRequest<ChampionshipEntry[]>(`/championships/${id}/entries`, {
+      method: "POST",
+      body: JSON.stringify({ team_id: teamId }),
+    }, token),
+
+  removeEntry: (token: string, id: string, teamId: string) =>
+    apiRequest<ChampionshipEntry[]>(`/championships/${id}/entries/${teamId}`, {
+      method: "DELETE",
+    }, token),
+};
