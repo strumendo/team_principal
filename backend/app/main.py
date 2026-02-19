@@ -10,10 +10,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.router import router as auth_router
+from app.championships.router import router as championships_router
 from app.config import settings
 from app.health.router import router as health_router
+from app.races.router import router as races_router
 from app.roles.router import permissions_router, roles_router, user_roles_router
-from app.championships.router import router as championships_router
 from app.teams.router import router as teams_router
 from app.users.router import router as users_router
 
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(user_roles_router)
     app.include_router(teams_router)
     app.include_router(championships_router)
+    app.include_router(races_router)
 
     return app
 

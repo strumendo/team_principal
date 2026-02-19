@@ -15,6 +15,7 @@ from app.db.session import get_db
 from app.main import create_app
 from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
 from app.championships.models import Championship, championship_entries  # noqa: F401
+from app.races.models import Race  # noqa: F401
 from app.teams.models import Team  # noqa: F401
 from app.users.models import User  # noqa: F401
 
@@ -125,6 +126,11 @@ async def admin_user(db_session: AsyncSession) -> User:
         ("championships:update", "championships"),
         ("championships:delete", "championships"),
         ("championships:manage_entries", "championships"),
+        ("races:read", "races"),
+        ("races:create", "races"),
+        ("races:update", "races"),
+        ("races:delete", "races"),
+        ("races:manage_entries", "races"),
     ]:
         perm = Permission(codename=codename, module=module)
         db_session.add(perm)
