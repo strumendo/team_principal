@@ -89,8 +89,14 @@ backend/
 │   ├── teams/               # Teams module / Modulo de equipes
 │   │   ├── router.py        # CRUD + membership endpoints (8 endpoints)
 │   │   ├── service.py       # CRUD + membership business logic
-│   │   ├── models.py        # Team ORM model (1:N with User)
+│   │   ├── models.py        # Team ORM model (1:N with User, M:N with Championship)
 │   │   └── schemas.py       # 7 Pydantic schemas
+│   │
+│   ├── championships/       # Championships module / Modulo de campeonatos
+│   │   ├── router.py        # CRUD + entry endpoints (8 endpoints)
+│   │   ├── service.py       # CRUD + entry management business logic
+│   │   ├── models.py        # Championship model, ChampionshipStatus enum, championship_entries table
+│   │   └── schemas.py       # 9 Pydantic schemas
 │   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
@@ -103,9 +109,11 @@ backend/
 │   ├── test_roles.py        # 13 tests
 │   ├── test_rbac.py         # 12 tests
 │   ├── test_user_roles.py   # 10 tests
-│   ├── test_teams.py        # 19 tests
-│   ├── test_team_members.py # 14 tests
-│   └── test_health.py       # 2 tests
+│   ├── test_teams.py              # 19 tests
+│   ├── test_team_members.py       # 14 tests
+│   ├── test_championships.py      # 20 tests
+│   ├── test_championship_entries.py # 13 tests
+│   └── test_health.py             # 2 tests
 │
 ├── alembic/                 # Database migrations
 │   ├── versions/            # Migration scripts
@@ -169,6 +177,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `roles_router` | `/api/v1/roles` | `app/roles/router.py` |
 | `user_roles_router` | `/api/v1/users` | `app/roles/router.py` |
 | `teams_router` | `/api/v1/teams` | `app/teams/router.py` |
+| `championships_router` | `/api/v1/championships` | `app/championships/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -203,6 +212,14 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | GET | `/api/v1/teams/{id}/members` | `teams:read` | teams |
 | POST | `/api/v1/teams/{id}/members` | `teams:manage_members` | teams |
 | DELETE | `/api/v1/teams/{id}/members/{uid}` | `teams:manage_members` | teams |
+| GET | `/api/v1/championships/` | `championships:read` | championships |
+| GET | `/api/v1/championships/{id}` | `championships:read` | championships |
+| POST | `/api/v1/championships/` | `championships:create` | championships |
+| PATCH | `/api/v1/championships/{id}` | `championships:update` | championships |
+| DELETE | `/api/v1/championships/{id}` | `championships:delete` | championships |
+| GET | `/api/v1/championships/{id}/entries` | `championships:read` | championships |
+| POST | `/api/v1/championships/{id}/entries` | `championships:manage_entries` | championships |
+| DELETE | `/api/v1/championships/{id}/entries/{tid}` | `championships:manage_entries` | championships |
 
 ---
 
@@ -307,6 +324,34 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 │ is_active       │
 │ created_at      │
 │ updated_at      │
+└────────┬────────┘
+         │
+         │ teams.id (PK)
+         │
+┌────────┴────────────────┐
+│  championship_entries    │
+├─────────────────────────┤
+│ championship_id  PK FK  │──→ championships.id (CASCADE)
+│ team_id          PK FK  │──→ teams.id (CASCADE)
+│ registered_at           │
+└────────┬────────────────┘
+         │
+         │ championships.id (PK)
+         │
+┌────────┴────────┐
+│  championships   │
+├─────────────────┤
+│ id          PK  │
+│ name        UQ  │
+│ display_name    │
+│ description     │
+│ season_year     │
+│ status          │ planned/active/completed/cancelled
+│ start_date      │
+│ end_date        │
+│ is_active       │
+│ created_at      │
+│ updated_at      │
 └─────────────────┘
 ```
 
@@ -334,7 +379,8 @@ frontend/src/
 │   │   ├── login/
 │   │   └── register/
 │   ├── (dashboard)/     # Protected pages / Paginas protegidas
-│   │   └── dashboard/
+│   │   ├── dashboard/
+│   │   └── championships/  # List, detail, create, edit pages
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
 │   ├── ui/              # Reusable UI components / Componentes UI reutilizaveis
@@ -372,7 +418,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│  Integration (89) │  ← httpx AsyncClient against test app
+│ Integration (122) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
