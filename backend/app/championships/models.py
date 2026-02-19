@@ -65,6 +65,9 @@ class Championship(Base):
     teams: Mapped[list["Team"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Team", secondary=championship_entries, back_populates="championships", lazy="selectin"
     )
+    races: Mapped[list["Race"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Race", back_populates="championship", lazy="selectin", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Championship(id={self.id}, name={self.name})>"
