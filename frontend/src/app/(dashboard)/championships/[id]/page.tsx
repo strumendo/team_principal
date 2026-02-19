@@ -151,17 +151,25 @@ export default function ChampionshipDetailPage() {
         </dl>
       </div>
 
-      {/* Races section / Secao de corridas */}
+      {/* Races & Standings section / Secao de corridas e classificacao */}
       <div className="mb-8 flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">
           Races / Corridas
         </h2>
-        <Link
-          href={`/championships/${id}/races`}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          View Races / Ver Corridas
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/championships/${id}/standings`}
+            className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+          >
+            Standings / Classificacao
+          </Link>
+          <Link
+            href={`/championships/${id}/races`}
+            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            View Races / Ver Corridas
+          </Link>
+        </div>
       </div>
 
       {/* Enrolled teams / Equipes inscritas */}

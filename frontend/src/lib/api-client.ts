@@ -97,6 +97,8 @@ import type {
   ChampionshipEntry,
 } from "@/types/championship";
 
+import type { ChampionshipStanding } from "@/types/result";
+
 export const championshipsApi = {
   list: (token: string, params?: { status?: string; season_year?: number; is_active?: boolean }) => {
     const query = new URLSearchParams();
@@ -161,6 +163,9 @@ export const championshipsApi = {
     apiRequest<ChampionshipEntry[]>(`/championships/${id}/entries/${teamId}`, {
       method: "DELETE",
     }, token),
+
+  getStandings: (token: string, id: string) =>
+    apiRequest<ChampionshipStanding[]>(`/championships/${id}/standings`, {}, token),
 };
 
 /**
@@ -171,6 +176,11 @@ import type {
   RaceDetail,
   RaceEntry,
 } from "@/types/race";
+
+import type {
+  RaceResult,
+  RaceResultDetail,
+} from "@/types/result";
 
 export const racesApi = {
   listByChampionship: (token: string, championshipId: string, params?: { status?: string; is_active?: boolean }) => {
@@ -240,4 +250,55 @@ export const racesApi = {
     apiRequest<RaceEntry[]>(`/races/${id}/entries/${teamId}`, {
       method: "DELETE",
     }, token),
+};
+
+/**
+ * Results API calls / Chamadas da API de resultados.
+ */
+export const resultsApi = {
+  listByRace: (token: string, raceId: string) =>
+    apiRequest<RaceResult[]>(`/races/${raceId}/results`, {}, token),
+
+  get: (token: string, id: string) =>
+    apiRequest<RaceResultDetail>(`/results/${id}`, {}, token),
+
+  create: (
+    token: string,
+    raceId: string,
+    data: {
+      team_id: string;
+      position: number;
+      points?: number;
+      laps_completed?: number;
+      fastest_lap?: boolean;
+      dnf?: boolean;
+      dsq?: boolean;
+      notes?: string;
+    },
+  ) =>
+    apiRequest<RaceResult>(`/races/${raceId}/results`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  update: (
+    token: string,
+    id: string,
+    data: {
+      position?: number;
+      points?: number;
+      laps_completed?: number;
+      fastest_lap?: boolean;
+      dnf?: boolean;
+      dsq?: boolean;
+      notes?: string;
+    },
+  ) =>
+    apiRequest<RaceResult>(`/results/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  delete: (token: string, id: string) =>
+    apiRequest<void>(`/results/${id}`, { method: "DELETE" }, token),
 };
