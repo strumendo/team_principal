@@ -14,20 +14,15 @@ from app.races.models import RaceStatus
 from app.races.schemas import (
     RaceCreateRequest,
     RaceDetailResponse,
-    RaceEntryRequest,
-    RaceEntryResponse,
     RaceListResponse,
     RaceResponse,
     RaceUpdateRequest,
 )
 from app.races.service import (
-    add_race_entry,
     create_race,
     delete_race,
     get_race_by_id,
-    list_race_entries,
     list_races,
-    remove_race_entry,
     update_race,
 )
 from app.users.models import User
@@ -129,47 +124,3 @@ async def delete_existing_race(
     race = await get_race_by_id(db, race_id)
     await delete_race(db, race)
     return Response(status_code=204)
-
-
-# --- Entry endpoints / Endpoints de inscricao ---
-
-
-@router.get("/api/v1/races/{race_id}/entries", response_model=list[RaceEntryResponse])
-async def read_race_entries(
-    race_id: uuid.UUID,
-    _current_user: User = Depends(require_permissions("races:read")),
-    db: AsyncSession = Depends(get_db),
-) -> list[dict]:  # type: ignore[type-arg]
-    """
-    List all entries of a race.
-    Lista todas as inscricoes de uma corrida.
-    """
-    return await list_race_entries(db, race_id)
-
-
-@router.post("/api/v1/races/{race_id}/entries", response_model=list[RaceEntryResponse])
-async def add_entry(
-    race_id: uuid.UUID,
-    body: RaceEntryRequest,
-    _current_user: User = Depends(require_permissions("races:manage_entries")),
-    db: AsyncSession = Depends(get_db),
-) -> list[dict]:  # type: ignore[type-arg]
-    """
-    Add a team to a race. Team must be enrolled in the race's championship.
-    Adiciona uma equipe a uma corrida. Equipe deve estar inscrita no campeonato da corrida.
-    """
-    return await add_race_entry(db, race_id, body.team_id)
-
-
-@router.delete("/api/v1/races/{race_id}/entries/{team_id}", response_model=list[RaceEntryResponse])
-async def remove_entry(
-    race_id: uuid.UUID,
-    team_id: uuid.UUID,
-    _current_user: User = Depends(require_permissions("races:manage_entries")),
-    db: AsyncSession = Depends(get_db),
-) -> list[dict]:  # type: ignore[type-arg]
-    """
-    Remove a team from a race.
-    Remove uma equipe de uma corrida.
-    """
-    return await remove_race_entry(db, race_id, team_id)

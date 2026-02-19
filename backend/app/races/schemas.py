@@ -53,19 +53,8 @@ class RaceListResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class RaceTeamResponse(BaseModel):
-    """Team summary within a race / Resumo de equipe em uma corrida."""
-
-    id: uuid.UUID
-    name: str
-    display_name: str
-    is_active: bool
-
-    model_config = {"from_attributes": True}
-
-
 class RaceDetailResponse(BaseModel):
-    """Race detail response body with teams / Corpo da resposta detalhada de corrida com equipes."""
+    """Race detail response body / Corpo da resposta detalhada de corrida."""
 
     id: uuid.UUID
     championship_id: uuid.UUID
@@ -79,29 +68,10 @@ class RaceDetailResponse(BaseModel):
     track_country: str | None
     laps_total: int | None
     is_active: bool
-    teams: list[RaceTeamResponse]
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
-
-
-class RaceEntryResponse(BaseModel):
-    """Race entry with registration date / Inscricao de corrida com data de registro."""
-
-    team_id: uuid.UUID
-    team_name: str
-    team_display_name: str
-    team_is_active: bool
-    registered_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class RaceEntryRequest(BaseModel):
-    """Race entry request body / Corpo da requisicao de inscricao de corrida."""
-
-    team_id: uuid.UUID
 
 
 class RaceCreateRequest(BaseModel):
