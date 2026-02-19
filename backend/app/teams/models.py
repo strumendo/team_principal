@@ -35,6 +35,12 @@ class Team(Base):
     members: Mapped[list["User"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "User", back_populates="team", lazy="selectin"
     )
+    championships: Mapped[list["Championship"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Championship",
+        secondary="championship_entries",
+        back_populates="teams",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<Team(id={self.id}, name={self.name})>"

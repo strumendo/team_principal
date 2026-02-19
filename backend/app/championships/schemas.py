@@ -47,8 +47,19 @@ class ChampionshipListResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ChampionshipTeamResponse(BaseModel):
+    """Team summary within a championship / Resumo de equipe em um campeonato."""
+
+    id: uuid.UUID
+    name: str
+    display_name: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
 class ChampionshipDetailResponse(BaseModel):
-    """Championship detail response body / Corpo da resposta detalhada de campeonato."""
+    """Championship detail response body with teams / Corpo da resposta detalhada de campeonato com equipes."""
 
     id: uuid.UUID
     name: str
@@ -59,10 +70,29 @@ class ChampionshipDetailResponse(BaseModel):
     start_date: date | None
     end_date: date | None
     is_active: bool
+    teams: list[ChampionshipTeamResponse]
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ChampionshipEntryResponse(BaseModel):
+    """Championship entry with registration date / Inscricao com data de registro."""
+
+    team_id: uuid.UUID
+    team_name: str
+    team_display_name: str
+    team_is_active: bool
+    registered_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ChampionshipEntryRequest(BaseModel):
+    """Championship entry request body / Corpo da requisicao de inscricao."""
+
+    team_id: uuid.UUID
 
 
 class ChampionshipCreateRequest(BaseModel):

@@ -14,7 +14,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
 from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
-from app.championships.models import Championship  # noqa: F401
+from app.championships.models import Championship, championship_entries  # noqa: F401
 from app.teams.models import Team  # noqa: F401
 from app.users.models import User  # noqa: F401
 
