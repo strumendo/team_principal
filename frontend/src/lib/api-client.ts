@@ -162,3 +162,82 @@ export const championshipsApi = {
       method: "DELETE",
     }, token),
 };
+
+/**
+ * Races API calls / Chamadas da API de corridas.
+ */
+import type {
+  RaceListItem,
+  RaceDetail,
+  RaceEntry,
+} from "@/types/race";
+
+export const racesApi = {
+  listByChampionship: (token: string, championshipId: string, params?: { status?: string; is_active?: boolean }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.is_active !== undefined) query.set("is_active", String(params.is_active));
+    const qs = query.toString();
+    return apiRequest<RaceListItem[]>(`/championships/${championshipId}/races${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  get: (token: string, id: string) =>
+    apiRequest<RaceDetail>(`/races/${id}`, {}, token),
+
+  create: (
+    token: string,
+    championshipId: string,
+    data: {
+      name: string;
+      display_name: string;
+      round_number: number;
+      description?: string;
+      status?: string;
+      scheduled_at?: string;
+      track_name?: string;
+      track_country?: string;
+      laps_total?: number;
+    },
+  ) =>
+    apiRequest<RaceListItem>(`/championships/${championshipId}/races`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  update: (
+    token: string,
+    id: string,
+    data: {
+      display_name?: string;
+      description?: string;
+      round_number?: number;
+      status?: string;
+      scheduled_at?: string;
+      track_name?: string;
+      track_country?: string;
+      laps_total?: number;
+      is_active?: boolean;
+    },
+  ) =>
+    apiRequest<RaceListItem>(`/races/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  delete: (token: string, id: string) =>
+    apiRequest<void>(`/races/${id}`, { method: "DELETE" }, token),
+
+  listEntries: (token: string, id: string) =>
+    apiRequest<RaceEntry[]>(`/races/${id}/entries`, {}, token),
+
+  addEntry: (token: string, id: string, teamId: string) =>
+    apiRequest<RaceEntry[]>(`/races/${id}/entries`, {
+      method: "POST",
+      body: JSON.stringify({ team_id: teamId }),
+    }, token),
+
+  removeEntry: (token: string, id: string, teamId: string) =>
+    apiRequest<RaceEntry[]>(`/races/${id}/entries/${teamId}`, {
+      method: "DELETE",
+    }, token),
+};

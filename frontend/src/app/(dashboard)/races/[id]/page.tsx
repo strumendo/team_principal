@@ -1,6 +1,6 @@
 /**
- * Championship detail page with enrolled teams.
- * Pagina de detalhe do campeonato com equipes inscritas.
+ * Race detail page with enrolled teams.
+ * Pagina de detalhe da corrida com equipes inscritas.
  */
 "use client";
 
@@ -8,24 +8,25 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ChampionshipDetail, ChampionshipEntry, ChampionshipStatus } from "@/types/championship";
-import { championshipsApi } from "@/lib/api-client";
+import type { RaceDetail, RaceEntry, RaceStatus } from "@/types/race";
+import { racesApi } from "@/lib/api-client";
 
-const STATUS_COLORS: Record<ChampionshipStatus, string> = {
-  planned: "bg-gray-100 text-gray-800",
+const STATUS_COLORS: Record<RaceStatus, string> = {
+  scheduled: "bg-gray-100 text-gray-800",
+  qualifying: "bg-yellow-100 text-yellow-800",
   active: "bg-green-100 text-green-800",
-  completed: "bg-blue-100 text-blue-800",
+  finished: "bg-blue-100 text-blue-800",
   cancelled: "bg-red-100 text-red-800",
 };
 
-export default function ChampionshipDetailPage() {
+export default function RaceDetailPage() {
   const { data: session } = useSession();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const [championship, setChampionship] = useState<ChampionshipDetail | null>(null);
-  const [entries, setEntries] = useState<ChampionshipEntry[]>([]);
+  const [race, setRace] = useState<RaceDetail | null>(null);
+  const [entries, setEntries] = useState<RaceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,15 +37,15 @@ export default function ChampionshipDetailPage() {
 
     const fetchData = async () => {
       setLoading(true);
-      const [champResult, entriesResult] = await Promise.all([
-        championshipsApi.get(token, id),
-        championshipsApi.listEntries(token, id),
+      const [raceResult, entriesResult] = await Promise.all([
+        racesApi.get(token, id),
+        racesApi.listEntries(token, id),
       ]);
 
-      if (champResult.error) {
-        setError(champResult.error);
+      if (raceResult.error) {
+        setError(raceResult.error);
       } else {
-        setChampionship(champResult.data || null);
+        setRace(raceResult.data || null);
         setEntries(entriesResult.data || []);
         setError(null);
       }
@@ -55,18 +56,18 @@ export default function ChampionshipDetailPage() {
   }, [session, id, token]);
 
   const handleDelete = async () => {
-    if (!confirm("Delete this championship? / Excluir este campeonato?")) return;
+    if (!confirm("Delete this race? / Excluir esta corrida?")) return;
 
-    const { error: err } = await championshipsApi.delete(token, id);
+    const { error: err } = await racesApi.delete(token, id);
     if (err) {
       setError(err);
-    } else {
-      router.push("/championships");
+    } else if (race) {
+      router.push(`/championships/${race.championship_id}/races`);
     }
   };
 
   const handleRemoveEntry = async (teamId: string) => {
-    const { data, error: err } = await championshipsApi.removeEntry(token, id, teamId);
+    const { data, error: err } = await racesApi.removeEntry(token, id, teamId);
     if (err) {
       setError(err);
     } else {
@@ -82,20 +83,20 @@ export default function ChampionshipDetailPage() {
     return <p className="text-red-600">{error}</p>;
   }
 
-  if (!championship) {
-    return <p className="text-gray-500">Championship not found. / Campeonato nao encontrado.</p>;
+  if (!race) {
+    return <p className="text-gray-500">Race not found. / Corrida nao encontrada.</p>;
   }
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{championship.display_name}</h1>
-          <p className="text-sm text-gray-500">{championship.name}</p>
+          <h1 className="text-3xl font-bold text-gray-900">{race.display_name}</h1>
+          <p className="text-sm text-gray-500">{race.name}</p>
         </div>
         <div className="flex gap-2">
           <Link
-            href={`/championships/${id}/edit`}
+            href={`/races/${id}/edit`}
             className="rounded bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
           >
             Edit / Editar
@@ -109,59 +110,57 @@ export default function ChampionshipDetailPage() {
         </div>
       </div>
 
-      {/* Championship details / Detalhes do campeonato */}
+      {/* Race details / Detalhes da corrida */}
       <div className="mb-8 rounded-lg border bg-white p-6">
         <dl className="grid grid-cols-2 gap-4">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Season Year / Ano</dt>
-            <dd className="text-lg text-gray-900">{championship.season_year}</dd>
+            <dt className="text-sm font-medium text-gray-500">Round Number / Numero da Rodada</dt>
+            <dd className="text-lg text-gray-900">{race.round_number}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Status</dt>
             <dd>
-              <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${STATUS_COLORS[championship.status]}`}>
-                {championship.status}
+              <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${STATUS_COLORS[race.status]}`}>
+                {race.status}
               </span>
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Start Date / Data Inicio</dt>
-            <dd className="text-gray-900">{championship.start_date || "—"}</dd>
+            <dt className="text-sm font-medium text-gray-500">Track / Pista</dt>
+            <dd className="text-gray-900">
+              {race.track_name || "—"}
+              {race.track_country && ` (${race.track_country})`}
+            </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">End Date / Data Fim</dt>
-            <dd className="text-gray-900">{championship.end_date || "—"}</dd>
+            <dt className="text-sm font-medium text-gray-500">Scheduled At / Agendado para</dt>
+            <dd className="text-gray-900">
+              {race.scheduled_at
+                ? new Date(race.scheduled_at).toLocaleString()
+                : "—"}
+            </dd>
           </div>
-          <div className="col-span-2">
-            <dt className="text-sm font-medium text-gray-500">Description / Descricao</dt>
-            <dd className="text-gray-900">{championship.description || "—"}</dd>
+          <div>
+            <dt className="text-sm font-medium text-gray-500">Laps / Voltas</dt>
+            <dd className="text-gray-900">{race.laps_total ?? "—"}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Active / Ativo</dt>
             <dd>
               <span
                 className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                  championship.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                  race.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                 }`}
               >
-                {championship.is_active ? "Yes / Sim" : "No / Nao"}
+                {race.is_active ? "Yes / Sim" : "No / Nao"}
               </span>
             </dd>
           </div>
+          <div className="col-span-2">
+            <dt className="text-sm font-medium text-gray-500">Description / Descricao</dt>
+            <dd className="text-gray-900">{race.description || "—"}</dd>
+          </div>
         </dl>
-      </div>
-
-      {/* Races section / Secao de corridas */}
-      <div className="mb-8 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">
-          Races / Corridas
-        </h2>
-        <Link
-          href={`/championships/${id}/races`}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          View Races / Ver Corridas
-        </Link>
       </div>
 
       {/* Enrolled teams / Equipes inscritas */}
@@ -227,8 +226,8 @@ export default function ChampionshipDetailPage() {
       )}
 
       <div className="mt-6">
-        <Link href="/championships" className="text-blue-600 hover:underline">
-          &larr; Back to Championships / Voltar aos Campeonatos
+        <Link href={`/championships/${race.championship_id}/races`} className="text-blue-600 hover:underline">
+          &larr; Back to Races / Voltar as Corridas
         </Link>
       </div>
     </div>
