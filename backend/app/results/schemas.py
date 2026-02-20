@@ -133,3 +133,21 @@ class ChampionshipStandingResponse(BaseModel):
     wins: int
 
     model_config = {"from_attributes": True}
+
+
+class DriverStandingResponse(BaseModel):
+    """Driver championship standing response body / Corpo da resposta de classificacao de piloto."""
+
+    position: int
+    driver_id: uuid.UUID
+    driver_name: str
+    driver_display_name: str
+    driver_abbreviation: str
+    team_id: uuid.UUID
+    team_name: str
+    team_display_name: str
+    total_points: float
+    races_scored: int
+    wins: int
+
+    model_config = {"from_attributes": True}
