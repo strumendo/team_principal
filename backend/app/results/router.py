@@ -66,6 +66,7 @@ async def create_new_result(
         dnf=body.dnf,
         dsq=body.dsq,
         notes=body.notes,
+        driver_id=body.driver_id,
     )
 
 
@@ -104,6 +105,7 @@ async def update_existing_result(
         dnf=body.dnf,
         dsq=body.dsq,
         notes=body.notes,
+        driver_id=body.driver_id,
     )
 
 
