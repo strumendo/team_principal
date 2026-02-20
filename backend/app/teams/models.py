@@ -47,6 +47,9 @@ class Team(Base):
         back_populates="teams",
         lazy="selectin",
     )
+    drivers: Mapped[list["Driver"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Driver", back_populates="team", cascade="all, delete-orphan", lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<Team(id={self.id}, name={self.name})>"

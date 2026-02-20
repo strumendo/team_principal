@@ -9,14 +9,15 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.championships.models import Championship, championship_entries  # noqa: F401
 from app.core.security import create_access_token, hash_password
 from app.db.base import Base
 from app.db.session import get_db
+from app.drivers.models import Driver  # noqa: F401
 from app.main import create_app
-from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
-from app.championships.models import Championship, championship_entries  # noqa: F401
 from app.races.models import Race, race_entries  # noqa: F401
 from app.results.models import RaceResult  # noqa: F401
+from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
 from app.teams.models import Team  # noqa: F401
 from app.users.models import User  # noqa: F401
 
@@ -136,6 +137,10 @@ async def admin_user(db_session: AsyncSession) -> User:
         ("results:create", "results"),
         ("results:update", "results"),
         ("results:delete", "results"),
+        ("drivers:read", "drivers"),
+        ("drivers:create", "drivers"),
+        ("drivers:update", "drivers"),
+        ("drivers:delete", "drivers"),
     ]:
         perm = Permission(codename=codename, module=module)
         db_session.add(perm)
