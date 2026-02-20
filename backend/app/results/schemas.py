@@ -15,6 +15,7 @@ class RaceResultResponse(BaseModel):
     id: uuid.UUID
     race_id: uuid.UUID
     team_id: uuid.UUID
+    driver_id: uuid.UUID | None
     position: int
     points: float
     laps_completed: int | None
@@ -34,6 +35,7 @@ class RaceResultListResponse(BaseModel):
     id: uuid.UUID
     race_id: uuid.UUID
     team_id: uuid.UUID
+    driver_id: uuid.UUID | None
     position: int
     points: float
     laps_completed: int | None
@@ -58,12 +60,25 @@ class RaceResultTeamResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RaceResultDriverResponse(BaseModel):
+    """Driver summary within a result / Resumo de piloto em um resultado."""
+
+    id: uuid.UUID
+    name: str
+    display_name: str
+    abbreviation: str
+    number: int
+
+    model_config = {"from_attributes": True}
+
+
 class RaceResultDetailResponse(BaseModel):
-    """Race result detail response with team / Resposta detalhada de resultado com equipe."""
+    """Race result detail response with team and driver / Resposta detalhada de resultado com equipe e piloto."""
 
     id: uuid.UUID
     race_id: uuid.UUID
     team_id: uuid.UUID
+    driver_id: uuid.UUID | None
     position: int
     points: float
     laps_completed: int | None
@@ -72,6 +87,7 @@ class RaceResultDetailResponse(BaseModel):
     dsq: bool
     notes: str | None
     team: RaceResultTeamResponse
+    driver: RaceResultDriverResponse | None
     created_at: datetime
     updated_at: datetime
 
@@ -82,6 +98,7 @@ class RaceResultCreateRequest(BaseModel):
     """Race result creation request body / Corpo da requisicao de criacao de resultado."""
 
     team_id: uuid.UUID
+    driver_id: uuid.UUID | None = None
     position: int
     points: float = 0.0
     laps_completed: int | None = None
@@ -94,6 +111,7 @@ class RaceResultCreateRequest(BaseModel):
 class RaceResultUpdateRequest(BaseModel):
     """Race result update request body / Corpo da requisicao de atualizacao de resultado."""
 
+    driver_id: uuid.UUID | None = None
     position: int | None = None
     points: float | None = None
     laps_completed: int | None = None
@@ -107,6 +125,24 @@ class ChampionshipStandingResponse(BaseModel):
     """Championship standing response body / Corpo da resposta de classificacao do campeonato."""
 
     position: int
+    team_id: uuid.UUID
+    team_name: str
+    team_display_name: str
+    total_points: float
+    races_scored: int
+    wins: int
+
+    model_config = {"from_attributes": True}
+
+
+class DriverStandingResponse(BaseModel):
+    """Driver championship standing response body / Corpo da resposta de classificacao de piloto."""
+
+    position: int
+    driver_id: uuid.UUID
+    driver_name: str
+    driver_display_name: str
+    driver_abbreviation: str
     team_id: uuid.UUID
     team_name: str
     team_display_name: str

@@ -98,6 +98,7 @@ import type {
 } from "@/types/championship";
 
 import type { ChampionshipStanding } from "@/types/result";
+import type { DriverStanding } from "@/types/driver";
 
 export const championshipsApi = {
   list: (token: string, params?: { status?: string; season_year?: number; is_active?: boolean }) => {
@@ -166,6 +167,9 @@ export const championshipsApi = {
 
   getStandings: (token: string, id: string) =>
     apiRequest<ChampionshipStanding[]>(`/championships/${id}/standings`, {}, token),
+
+  getDriverStandings: (token: string, id: string) =>
+    apiRequest<DriverStanding[]>(`/championships/${id}/driver-standings`, {}, token),
 };
 
 /**
@@ -253,6 +257,27 @@ export const racesApi = {
 };
 
 /**
+ * Drivers API calls / Chamadas da API de pilotos.
+ */
+import type {
+  DriverListItem,
+  DriverDetail,
+} from "@/types/driver";
+
+export const driversApi = {
+  list: (token: string, params?: { is_active?: boolean; team_id?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.is_active !== undefined) query.set("is_active", String(params.is_active));
+    if (params?.team_id) query.set("team_id", params.team_id);
+    const qs = query.toString();
+    return apiRequest<DriverListItem[]>(`/drivers/${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  get: (token: string, id: string) =>
+    apiRequest<DriverDetail>(`/drivers/${id}`, {}, token),
+};
+
+/**
  * Results API calls / Chamadas da API de resultados.
  */
 export const resultsApi = {
@@ -267,6 +292,7 @@ export const resultsApi = {
     raceId: string,
     data: {
       team_id: string;
+      driver_id?: string;
       position: number;
       points?: number;
       laps_completed?: number;
@@ -285,6 +311,7 @@ export const resultsApi = {
     token: string,
     id: string,
     data: {
+      driver_id?: string;
       position?: number;
       points?: number;
       laps_completed?: number;
