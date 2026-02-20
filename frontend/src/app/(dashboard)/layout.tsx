@@ -30,6 +30,14 @@ export default function DashboardLayout({
                 Championships / Campeonatos
               </a>
             </li>
+            <li>
+              <a
+                href="/drivers"
+                className="block rounded px-3 py-2 hover:bg-gray-800"
+              >
+                Drivers / Pilotos
+              </a>
+            </li>
           </ul>
         </nav>
       </aside>
