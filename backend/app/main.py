@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth.router import router as auth_router
 from app.championships.router import router as championships_router
 from app.config import settings
+from app.drivers.router import router as drivers_router
 from app.health.router import router as health_router
 from app.races.router import router as races_router
 from app.results.router import router as results_router
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(championships_router)
     app.include_router(races_router)
     app.include_router(results_router)
+    app.include_router(drivers_router)
 
     return app
 
