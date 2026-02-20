@@ -104,11 +104,17 @@ backend/
 │   │   ├── models.py        # Race model, RaceStatus enum, race_entries table
 │   │   └── schemas.py       # 10 Pydantic schemas
 │   │
+│   ├── drivers/             # Drivers module / Modulo de pilotos
+│   │   ├── router.py        # CRUD endpoints (5 endpoints)
+│   │   ├── service.py       # CRUD + validation business logic
+│   │   ├── models.py        # Driver model (FK to teams)
+│   │   └── schemas.py       # 7 Pydantic schemas
+│   │
 │   ├── results/             # Results module / Modulo de resultados
-│   │   ├── router.py        # CRUD + standings endpoints (6 endpoints)
-│   │   ├── service.py       # CRUD + standings computation business logic
-│   │   ├── models.py        # RaceResult model
-│   │   └── schemas.py       # 8 Pydantic schemas
+│   │   ├── router.py        # CRUD + standings endpoints (7 endpoints)
+│   │   ├── service.py       # CRUD + standings computation business logic (team + driver)
+│   │   ├── models.py        # RaceResult model (FK to drivers optional)
+│   │   └── schemas.py       # 10 Pydantic schemas
 │   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
@@ -127,9 +133,11 @@ backend/
 │   ├── test_championship_entries.py # 13 tests
 │   ├── test_races.py              # 22 tests
 │   ├── test_race_entries.py       # 13 tests
-│   ├── test_race_results.py       # 23 tests
+│   ├── test_drivers.py                # 30 tests
+│   ├── test_race_results.py           # 28 tests
 │   ├── test_championship_standings.py # 9 tests
-│   └── test_health.py             # 2 tests
+│   ├── test_driver_standings.py       # 8 tests
+│   └── test_health.py                 # 2 tests
 │
 ├── alembic/                 # Database migrations
 │   ├── versions/            # Migration scripts
@@ -195,7 +203,8 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `teams_router` | `/api/v1/teams` | `app/teams/router.py` |
 | `championships_router` | `/api/v1/championships` | `app/championships/router.py` |
 | `races_router` | `/api/v1/championships/.../races`, `/api/v1/races` | `app/races/router.py` |
-| `results_router` | `/api/v1/races/.../results`, `/api/v1/results`, `/api/v1/championships/.../standings` | `app/results/router.py` |
+| `drivers_router` | `/api/v1/drivers` | `app/drivers/router.py` |
+| `results_router` | `/api/v1/races/.../results`, `/api/v1/results`, `/api/v1/championships/.../standings`, `/api/v1/championships/.../driver-standings` | `app/results/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -246,12 +255,18 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | GET | `/api/v1/races/{id}/entries` | `races:read` | races |
 | POST | `/api/v1/races/{id}/entries` | `races:manage_entries` | races |
 | DELETE | `/api/v1/races/{id}/entries/{tid}` | `races:manage_entries` | races |
+| GET | `/api/v1/drivers/` | `drivers:read` | drivers |
+| GET | `/api/v1/drivers/{id}` | `drivers:read` | drivers |
+| POST | `/api/v1/drivers/` | `drivers:create` | drivers |
+| PATCH | `/api/v1/drivers/{id}` | `drivers:update` | drivers |
+| DELETE | `/api/v1/drivers/{id}` | `drivers:delete` | drivers |
 | GET | `/api/v1/races/{id}/results` | `results:read` | results |
 | POST | `/api/v1/races/{id}/results` | `results:create` | results |
 | GET | `/api/v1/results/{id}` | `results:read` | results |
 | PATCH | `/api/v1/results/{id}` | `results:update` | results |
 | DELETE | `/api/v1/results/{id}` | `results:delete` | results |
 | GET | `/api/v1/championships/{id}/standings` | `results:read` | results |
+| GET | `/api/v1/championships/{id}/driver-standings` | `results:read` | results |
 
 ---
 
@@ -358,6 +373,25 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 │ updated_at      │
 └────────┬────────┘
          │
+         │ teams.id (FK CASCADE)
+         │
+┌────────┴────────┐
+│     drivers      │
+├─────────────────┤
+│ id          PK  │
+│ name        UQ  │ UNIQUE INDEX
+│ display_name    │
+│ abbreviation UQ │ 3 chars, uppercase
+│ number          │ UQ(team_id, number)
+│ nationality     │ nullable
+│ date_of_birth   │ nullable
+│ photo_url       │ nullable
+│ team_id     FK  │──→ teams.id (CASCADE) NOT NULL
+│ is_active       │
+│ created_at      │
+│ updated_at      │
+└─────────────────┘
+         │
          │ teams.id (PK)
          │
 ┌────────┴────────────────┐
@@ -423,6 +457,7 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 │ id           PK          │
 │ race_id      FK IDX      │──→ races.id (CASCADE)
 │ team_id      FK IDX      │──→ teams.id (CASCADE)
+│ driver_id    FK IDX      │──→ drivers.id (CASCADE) nullable
 │ position     INT         │
 │ points       FLOAT       │ default 0.0
 │ laps_completed INT       │ nullable
@@ -463,6 +498,7 @@ frontend/src/
 │   ├── (dashboard)/     # Protected pages / Paginas protegidas
 │   │   ├── dashboard/
 │   │   ├── championships/  # List, detail, create, edit pages
+│   │   ├── drivers/        # List page with filters
 │   │   └── races/          # Detail, edit pages (list/create under championships)
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
@@ -501,7 +537,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (189) │  ← httpx AsyncClient against test app
+│ Integration (232) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API

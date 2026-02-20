@@ -27,9 +27,9 @@ O modulo de Resultados registra os resultados de chegada por equipe e calcula a 
 | File / Arquivo | Purpose / Proposito |
 |---|---|
 | `app/results/models.py` | ORM model: `RaceResult` |
-| `app/results/schemas.py` | 8 Pydantic schemas (request/response) |
-| `app/results/service.py` | Business logic: CRUD + standings computation |
-| `app/results/router.py` | API endpoint definitions (6 endpoints) |
+| `app/results/schemas.py` | 10 Pydantic schemas (request/response) |
+| `app/results/service.py` | Business logic: CRUD + standings computation (team + driver) |
+| `app/results/router.py` | API endpoint definitions (7 endpoints) |
 | `alembic/versions/008_create_race_results_table.py` | Migration: `race_results` table |
 
 ---
@@ -55,6 +55,7 @@ O modulo de Resultados registra os resultados de chegada por equipe e calcula a 
 │ id              UUID PK       │        │ id              UUID PK       │
 │ race_id         UUID FK       │───────>│ ...                           │
 │ team_id         UUID FK       │        └──────────────────────────────┘
+│ driver_id       UUID FK       │ nullable ──→ drivers.id (CASCADE)
 │ position        INTEGER       │
 │ points          FLOAT         │ default: 0.0
 │ laps_completed  INTEGER       │ nullable
@@ -67,6 +68,7 @@ O modulo de Resultados registra os resultados de chegada por equipe e calcula a 
 ├──────────────────────────────┤
 │ UQ(race_id, team_id)         │ uq_race_result_team
 │ IDX(race_id), IDX(team_id)  │
+│ IDX(driver_id)               │
 └──────────────────────────────┘
 ```
 
@@ -77,6 +79,7 @@ O modulo de Resultados registra os resultados de chegada por equipe e calcula a 
 | `id` | UUID | PK, default uuid4 | Primary key | Chave primaria |
 | `race_id` | UUID | FK races.id, CASCADE, NOT NULL, INDEXED | Parent race | Corrida pai |
 | `team_id` | UUID | FK teams.id, CASCADE, NOT NULL, INDEXED | Team that finished | Equipe que terminou |
+| `driver_id` | UUID | FK drivers.id, CASCADE, nullable, INDEXED | Driver who raced (optional) | Piloto que correu (opcional) |
 | `position` | Integer | NOT NULL | Finishing position (1, 2, 3...) | Posicao de chegada |
 | `points` | Float | NOT NULL, default 0.0 | Points scored | Pontos marcados |
 | `laps_completed` | Integer | nullable | Laps completed | Voltas completadas |
@@ -111,7 +114,11 @@ O modulo de Resultados registra os resultados de chegada por equipe e calcula a 
 
    **Campos imutaveis** — `race_id` e `team_id` NAO estao no `UpdateRequest` e nao podem ser alterados apos criacao.
 
-6. **Standings exclude DSQ** — Championship standings aggregate only non-DSQ results. DSQ results are excluded from points and wins.
+6. **Driver validation** — If `driver_id` is provided, the driver must exist and must belong to the same team as `team_id`. Returns 404 if not found, 409 if team mismatch.
+
+   **Validacao do piloto** — Se `driver_id` for fornecido, o piloto deve existir e pertencer a mesma equipe do `team_id`. Retorna 404 se nao encontrado, 409 se equipe divergente.
+
+7. **Standings exclude DSQ** — Championship standings aggregate only non-DSQ results. DSQ results are excluded from points and wins.
 
    **Classificacao exclui DSQ** — A classificacao do campeonato agrega apenas resultados nao-DSQ.
 
@@ -140,9 +147,11 @@ O modulo de Resultados registra os resultados de chegada por equipe e calcula a 
 |---|---|---|
 | `RaceResultResponse` | Standard result response | Resposta padrao de resultado |
 | `RaceResultListResponse` | List item (same as Response) | Item de lista |
-| `RaceResultDetailResponse` | Detail with nested team | Detalhe com equipe aninhada |
+| `RaceResultDetailResponse` | Detail with nested team and driver | Detalhe com equipe e piloto aninhados |
 | `RaceResultTeamResponse` | Team summary in detail view | Resumo da equipe no detalhe |
-| `ChampionshipStandingResponse` | Standing entry with team, points, wins | Entrada de classificacao |
+| `RaceResultDriverResponse` | Driver summary in detail view | Resumo do piloto no detalhe |
+| `ChampionshipStandingResponse` | Team standing with points, wins | Classificacao de equipe |
+| `DriverStandingResponse` | Driver standing with points, wins, team | Classificacao de piloto |
 
 ### Request Schemas / Schemas de Requisicao
 
@@ -179,6 +188,7 @@ POST /api/v1/races/{race_id}/results
 ```json
 {
     "team_id": "uuid",
+    "driver_id": "uuid",
     "position": 1,
     "points": 25.0,
     "laps_completed": 30,
@@ -189,7 +199,7 @@ POST /api/v1/races/{race_id}/results
 }
 ```
 
-Required fields: `team_id`, `position`. All others have defaults.
+Required fields: `team_id`, `position`. All others have defaults. `driver_id` is optional — if provided, the driver must belong to the specified team.
 
 ### Get Race Result / Buscar Resultado de Corrida
 
@@ -212,6 +222,7 @@ PATCH /api/v1/results/{result_id}
 **Request body (all optional):**
 ```json
 {
+    "driver_id": "uuid",
     "position": 2,
     "points": 18.0,
     "laps_completed": 28,
@@ -266,6 +277,44 @@ Computes standings dynamically by aggregating non-DSQ race results:
 ]
 ```
 
+### Get Driver Championship Standings / Obter Classificacao de Pilotos do Campeonato
+
+```
+GET /api/v1/championships/{championship_id}/driver-standings
+```
+
+**Permission:** `results:read`
+**Response:** `200 OK` — `list[DriverStandingResponse]`
+
+Computes driver standings dynamically by aggregating non-DSQ race results that have `driver_id` set:
+- `total_points`: SUM of points from all non-DSQ results with a driver
+- `races_scored`: COUNT of non-DSQ race results per driver
+- `wins`: COUNT of position=1 non-DSQ results per driver
+- Ordered by `total_points` descending
+- `position` is 1-indexed based on order
+- Results without `driver_id` are excluded
+
+Calcula a classificacao de pilotos agregando resultados nao-DSQ que tenham `driver_id` definido. Resultados sem `driver_id` sao excluidos.
+
+**Response example:**
+```json
+[
+    {
+        "position": 1,
+        "driver_id": "uuid",
+        "driver_name": "verstappen",
+        "driver_display_name": "Max Verstappen",
+        "driver_abbreviation": "VER",
+        "team_id": "uuid",
+        "team_name": "red_bull",
+        "team_display_name": "Red Bull Racing",
+        "total_points": 50.0,
+        "races_scored": 2,
+        "wins": 2
+    }
+]
+```
+
 ---
 
 ## Error Responses / Respostas de Erro
@@ -274,8 +323,9 @@ Computes standings dynamically by aggregating non-DSQ race results:
 |---|---|---|
 | 401 | Missing or invalid auth token | Token ausente ou invalido |
 | 403 | Insufficient permissions | Permissoes insuficientes |
-| 404 | Race, team, or result not found | Corrida, equipe ou resultado nao encontrado |
+| 404 | Race, team, driver, or result not found | Corrida, equipe, piloto ou resultado nao encontrado |
 | 409 | Race not finished | Corrida nao finalizada |
+| 409 | Driver does not belong to team | Piloto nao pertence a equipe |
 | 409 | Team not enrolled in race | Equipe nao inscrita na corrida |
 | 409 | Duplicate result for team in race | Resultado duplicado para equipe |
 | 409 | Position taken by non-DSQ result | Posicao ocupada por resultado nao-DSQ |
@@ -290,10 +340,11 @@ Computes standings dynamically by aggregating non-DSQ race results:
 |---|---|---|
 | `list_race_results(db, race_id)` | List results ordered by position | Lista resultados por posicao |
 | `get_result_by_id(db, result_id)` | Get single result | Busca resultado unico |
-| `create_result(db, race_id, ...)` | Create with full validation | Cria com validacao completa |
-| `update_result(db, result, ...)` | Partial update with position check | Atualizacao parcial com verificacao |
+| `create_result(db, race_id, ..., driver_id)` | Create with full validation (incl. driver) | Cria com validacao completa (incl. piloto) |
+| `update_result(db, result, ..., driver_id)` | Partial update with position/driver check | Atualizacao parcial com verificacao |
 | `delete_result(db, result)` | Delete result | Exclui resultado |
-| `get_championship_standings(db, champ_id)` | Aggregate standings computation | Calculo agregado de classificacao |
+| `get_championship_standings(db, champ_id)` | Aggregate team standings computation | Calculo agregado de classificacao por equipe |
+| `get_driver_championship_standings(db, champ_id)` | Aggregate driver standings computation | Calculo agregado de classificacao por piloto |
 
 ---
 
@@ -314,7 +365,7 @@ Cria a tabela `race_results` com todas as colunas, indices em `race_id` e `team_
 
 ## Test Coverage / Cobertura de Testes
 
-### Race Results Tests / Testes de Resultados (`test_race_results.py` — 23 tests)
+### Race Results Tests / Testes de Resultados (`test_race_results.py` — 28 tests)
 
 | Test | Category |
 |---|---|
@@ -324,6 +375,9 @@ Cria a tabela `race_results` com todas as colunas, indices em `race_id` e `team_
 | `test_list_race_results_race_not_found` | List |
 | `test_create_result_success` | Create |
 | `test_create_result_minimal_fields` | Create |
+| `test_create_result_with_driver` | Create (driver link) |
+| `test_create_result_driver_wrong_team` | Create (409 driver team) |
+| `test_create_result_driver_not_found` | Create (404 driver) |
 | `test_create_result_race_not_finished` | Create (409) |
 | `test_create_result_team_not_enrolled` | Create (409) |
 | `test_create_result_duplicate_team` | Create (409) |
@@ -332,6 +386,8 @@ Cria a tabela `race_results` com todas as colunas, indices em `race_id` e `team_
 | `test_create_result_race_not_found` | Create (404) |
 | `test_create_result_team_not_found` | Create (404) |
 | `test_get_result_by_id` | Get |
+| `test_get_result_detail_includes_driver` | Get (driver) |
+| `test_get_result_detail_driver_null` | Get (no driver) |
 | `test_get_result_not_found` | Get |
 | `test_update_result_points` | Update |
 | `test_update_result_position_conflict` | Update (409) |
@@ -356,4 +412,17 @@ Cria a tabela `race_results` com todas as colunas, indices em `race_id` e `team_
 | `test_get_standings_unauthorized` | Auth (401) |
 | `test_get_standings_forbidden` | Auth (403) |
 
-**Total: 32 new tests, ~189 total across the project.**
+### Driver Standings Tests / Testes de Classificacao de Pilotos (`test_driver_standings.py` — 8 tests)
+
+| Test | Category |
+|---|---|
+| `test_get_driver_standings_empty` | Empty |
+| `test_get_driver_standings_ordered_by_points` | Ordering |
+| `test_get_driver_standings_excludes_dsq` | DSQ exclusion |
+| `test_get_driver_standings_counts_wins` | Wins count |
+| `test_get_driver_standings_ignores_results_without_driver` | No-driver exclusion |
+| `test_get_driver_standings_championship_not_found` | Error (404) |
+| `test_get_driver_standings_unauthorized` | Auth (401) |
+| `test_get_driver_standings_forbidden` | Auth (403) |
+
+**Total: 45 results-related tests (28 race results + 9 team standings + 8 driver standings).**
