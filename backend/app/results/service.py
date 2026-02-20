@@ -265,3 +265,92 @@ async def get_championship_standings(db: AsyncSession, championship_id: uuid.UUI
         )
 
     return standings
+
+
+async def get_driver_championship_standings(db: AsyncSession, championship_id: uuid.UUID) -> list[dict[str, Any]]:
+    """
+    Compute driver championship standings by aggregating race results per driver.
+    Only includes results that have a driver_id. Excludes DSQ results.
+    Wins counted via separate query for SQLite compatibility.
+
+    Calcula classificacao de pilotos no campeonato agregando resultados por piloto.
+    Inclui apenas resultados que possuem driver_id. Exclui resultados DSQ.
+    Vitorias contadas via query separada para compatibilidade com SQLite.
+    """
+    # Validate championship exists / Valida que o campeonato existe
+    champ_query = await db.execute(select(Championship).where(Championship.id == championship_id))
+    if champ_query.scalar_one_or_none() is None:
+        raise NotFoundException("Championship not found")
+
+    # Main query: total points and races scored per driver / Query principal por piloto
+    points_stmt = (
+        select(
+            RaceResult.driver_id,
+            Driver.name.label("driver_name"),
+            Driver.display_name.label("driver_display_name"),
+            Driver.abbreviation.label("driver_abbreviation"),
+            Driver.team_id.label("team_id"),
+            Team.name.label("team_name"),
+            Team.display_name.label("team_display_name"),
+            func.sum(RaceResult.points).label("total_points"),
+            func.count(RaceResult.id).label("races_scored"),
+        )
+        .join(Race, RaceResult.race_id == Race.id)
+        .join(Driver, RaceResult.driver_id == Driver.id)
+        .join(Team, Driver.team_id == Team.id)
+        .where(
+            Race.championship_id == championship_id,
+            RaceResult.dsq == False,  # noqa: E712
+            RaceResult.driver_id.isnot(None),
+        )
+        .group_by(
+            RaceResult.driver_id,
+            Driver.name,
+            Driver.display_name,
+            Driver.abbreviation,
+            Driver.team_id,
+            Team.name,
+            Team.display_name,
+        )
+        .order_by(func.sum(RaceResult.points).desc())
+    )
+    points_result = await db.execute(points_stmt)
+    points_rows = points_result.all()
+
+    # Wins query per driver (separate for SQLite compat) / Query de vitorias por piloto
+    wins_stmt = (
+        select(
+            RaceResult.driver_id,
+            func.count(RaceResult.id).label("wins"),
+        )
+        .join(Race, RaceResult.race_id == Race.id)
+        .where(
+            Race.championship_id == championship_id,
+            RaceResult.position == 1,
+            RaceResult.dsq == False,  # noqa: E712
+            RaceResult.driver_id.isnot(None),
+        )
+        .group_by(RaceResult.driver_id)
+    )
+    wins_result = await db.execute(wins_stmt)
+    wins_map: dict[uuid.UUID, int] = {row.driver_id: row.wins for row in wins_result.all()}
+
+    standings: list[dict[str, Any]] = []
+    for idx, row in enumerate(points_rows, start=1):
+        standings.append(
+            {
+                "position": idx,
+                "driver_id": row.driver_id,
+                "driver_name": row.driver_name,
+                "driver_display_name": row.driver_display_name,
+                "driver_abbreviation": row.driver_abbreviation,
+                "team_id": row.team_id,
+                "team_name": row.team_name,
+                "team_display_name": row.team_display_name,
+                "total_points": float(row.total_points),
+                "races_scored": row.races_scored,
+                "wins": wins_map.get(row.driver_id, 0),
+            }
+        )
+
+    return standings
