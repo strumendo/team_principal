@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.championships.models import Championship, ChampionshipStatus, championship_entries
 from app.core.security import create_access_token
+from app.drivers.models import Driver
 from app.races.models import Race, RaceStatus, race_entries
 from app.results.models import RaceResult
 from app.roles.models import Permission, Role
@@ -503,3 +504,132 @@ async def test_create_result_forbidden(
     payload = {"team_id": str(test_team.id), "position": 1}
     resp = await client.post(f"/api/v1/races/{finished_race.id}/results", json=payload, headers=headers)
     assert resp.status_code == 403
+
+
+# --- Driver link / Vinculo com piloto ---
+
+
+@pytest.fixture
+async def team_driver(db_session: AsyncSession, test_team: Team) -> Driver:
+    """Create a driver linked to test_team / Cria um piloto vinculado a test_team."""
+    driver = Driver(
+        name="verstappen",
+        display_name="Max Verstappen",
+        abbreviation="VER",
+        number=1,
+        team_id=test_team.id,
+    )
+    db_session.add(driver)
+    await db_session.commit()
+    await db_session.refresh(driver)
+    return driver
+
+
+@pytest.fixture
+async def other_team_driver(db_session: AsyncSession, test_team_b: Team) -> Driver:
+    """Create a driver linked to test_team_b / Cria um piloto vinculado a test_team_b."""
+    driver = Driver(
+        name="norris",
+        display_name="Lando Norris",
+        abbreviation="NOR",
+        number=4,
+        team_id=test_team_b.id,
+    )
+    db_session.add(driver)
+    await db_session.commit()
+    await db_session.refresh(driver)
+    return driver
+
+
+async def test_create_result_with_driver(
+    client: AsyncClient,
+    admin_headers: dict[str, str],
+    finished_race: Race,
+    test_team: Team,
+    team_driver: Driver,
+) -> None:
+    """Create a result with driver_id / Cria resultado com driver_id."""
+    payload = {
+        "team_id": str(test_team.id),
+        "driver_id": str(team_driver.id),
+        "position": 1,
+        "points": 25.0,
+    }
+    resp = await client.post(f"/api/v1/races/{finished_race.id}/results", json=payload, headers=admin_headers)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["driver_id"] == str(team_driver.id)
+
+
+async def test_create_result_driver_wrong_team(
+    client: AsyncClient,
+    admin_headers: dict[str, str],
+    finished_race: Race,
+    test_team: Team,
+    other_team_driver: Driver,
+) -> None:
+    """Cannot create result with driver from different team / Nao pode criar resultado com piloto de outra equipe."""
+    payload = {
+        "team_id": str(test_team.id),
+        "driver_id": str(other_team_driver.id),
+        "position": 1,
+    }
+    resp = await client.post(f"/api/v1/races/{finished_race.id}/results", json=payload, headers=admin_headers)
+    assert resp.status_code == 409
+
+
+async def test_create_result_driver_not_found(
+    client: AsyncClient,
+    admin_headers: dict[str, str],
+    finished_race: Race,
+    test_team: Team,
+) -> None:
+    """Cannot create result with nonexistent driver / Nao pode criar resultado com piloto inexistente."""
+    payload = {
+        "team_id": str(test_team.id),
+        "driver_id": str(uuid.uuid4()),
+        "position": 1,
+    }
+    resp = await client.post(f"/api/v1/races/{finished_race.id}/results", json=payload, headers=admin_headers)
+    assert resp.status_code == 404
+
+
+async def test_get_result_detail_includes_driver(
+    client: AsyncClient,
+    admin_headers: dict[str, str],
+    db_session: AsyncSession,
+    finished_race: Race,
+    test_team: Team,
+    team_driver: Driver,
+) -> None:
+    """Get result detail includes driver info / Detalhe do resultado inclui info do piloto."""
+    result = RaceResult(
+        race_id=finished_race.id,
+        team_id=test_team.id,
+        driver_id=team_driver.id,
+        position=1,
+        points=25.0,
+    )
+    db_session.add(result)
+    await db_session.commit()
+    await db_session.refresh(result)
+
+    resp = await client.get(f"/api/v1/results/{result.id}", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["driver_id"] == str(team_driver.id)
+    assert data["driver"]["name"] == "verstappen"
+    assert data["driver"]["abbreviation"] == "VER"
+
+
+async def test_get_result_detail_driver_null(
+    client: AsyncClient,
+    admin_headers: dict[str, str],
+    test_result: RaceResult,
+) -> None:
+    """Get result detail with no driver returns null / Detalhe do resultado sem piloto retorna null."""
+    resp = await client.get(f"/api/v1/results/{test_result.id}", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["driver_id"] is None
+    assert data["driver"] is None

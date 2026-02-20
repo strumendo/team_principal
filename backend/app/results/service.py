@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.championships.models import Championship
 from app.core.exceptions import ConflictException, NotFoundException
+from app.drivers.models import Driver
 from app.races.models import Race, RaceStatus, race_entries
 from app.results.models import RaceResult
 from app.teams.models import Team
@@ -54,6 +55,7 @@ async def create_result(
     dnf: bool = False,
     dsq: bool = False,
     notes: str | None = None,
+    driver_id: uuid.UUID | None = None,
 ) -> RaceResult:
     """
     Create a race result. Validates race is finished, team is enrolled, no duplicate, position unique among non-DSQ.
@@ -88,6 +90,15 @@ async def create_result(
     if dup_query.scalar_one_or_none() is not None:
         raise ConflictException("Result already exists for this team in this race")
 
+    # Validate driver if provided / Valida piloto se fornecido
+    if driver_id is not None:
+        driver_query = await db.execute(select(Driver).where(Driver.id == driver_id))
+        driver = driver_query.scalar_one_or_none()
+        if driver is None:
+            raise NotFoundException("Driver not found")
+        if driver.team_id != team_id:
+            raise ConflictException("Driver does not belong to the specified team")
+
     # Check position uniqueness among non-DSQ results / Verifica unicidade de posicao entre nao-DSQ
     if not dsq:
         pos_query = await db.execute(
@@ -103,6 +114,7 @@ async def create_result(
     race_result = RaceResult(
         race_id=race_id,
         team_id=team_id,
+        driver_id=driver_id,
         position=position,
         points=points,
         laps_completed=laps_completed,
@@ -127,11 +139,21 @@ async def update_result(
     dnf: bool | None = None,
     dsq: bool | None = None,
     notes: str | None = None,
+    driver_id: uuid.UUID | None = None,
 ) -> RaceResult:
     """
     Update race result fields.
     Atualiza campos do resultado de corrida.
     """
+    # Validate driver if provided / Valida piloto se fornecido
+    if driver_id is not None:
+        driver_query = await db.execute(select(Driver).where(Driver.id == driver_id))
+        driver = driver_query.scalar_one_or_none()
+        if driver is None:
+            raise NotFoundException("Driver not found")
+        if driver.team_id != race_result.team_id:
+            raise ConflictException("Driver does not belong to the result's team")
+
     # Determine effective DSQ for position check / Determina DSQ efetivo para verificacao de posicao
     effective_dsq = dsq if dsq is not None else race_result.dsq
     effective_position = position if position is not None else race_result.position
@@ -149,6 +171,8 @@ async def update_result(
         if pos_query.scalar_one_or_none() is not None:
             raise ConflictException("Position already taken by a non-DSQ result")
 
+    if driver_id is not None:
+        race_result.driver_id = driver_id
     if position is not None:
         race_result.position = position
     if points is not None:

@@ -28,6 +28,9 @@ class RaceResult(Base):
     team_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    driver_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("drivers.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     points: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     laps_completed: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -46,6 +49,9 @@ class RaceResult(Base):
     )
     team: Mapped["Team"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Team", lazy="selectin"
+    )
+    driver: Mapped["Driver | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Driver", lazy="selectin"
     )
 
     def __repr__(self) -> str:
