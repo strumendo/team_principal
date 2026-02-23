@@ -329,3 +329,13 @@ export const resultsApi = {
   delete: (token: string, id: string) =>
     apiRequest<void>(`/results/${id}`, { method: "DELETE" }, token),
 };
+
+/**
+ * Dashboard API calls / Chamadas da API do dashboard.
+ */
+import type { DashboardSummary } from "@/types/dashboard";
+
+export const dashboardApi = {
+  getSummary: (token: string) =>
+    apiRequest<DashboardSummary>("/dashboard/summary", {}, token),
+};

@@ -110,6 +110,11 @@ backend/
 │   │   ├── models.py        # RaceResult model
 │   │   └── schemas.py       # 8 Pydantic schemas
 │   │
+│   ├── dashboard/            # Dashboard module / Modulo do dashboard
+│   │   ├── router.py        # GET /dashboard/summary
+│   │   ├── service.py       # Aggregation queries + standings reuse
+│   │   └── schemas.py       # 5 Pydantic schemas
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -129,7 +134,9 @@ backend/
 │   ├── test_race_entries.py       # 13 tests
 │   ├── test_race_results.py       # 23 tests
 │   ├── test_championship_standings.py # 9 tests
-│   └── test_health.py             # 2 tests
+│   ├── test_drivers.py              # 30 tests
+│   ├── test_dashboard.py            # 13 tests
+│   └── test_health.py               # 2 tests
 │
 ├── alembic/                 # Database migrations
 │   ├── versions/            # Migration scripts
@@ -196,6 +203,8 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `championships_router` | `/api/v1/championships` | `app/championships/router.py` |
 | `races_router` | `/api/v1/championships/.../races`, `/api/v1/races` | `app/races/router.py` |
 | `results_router` | `/api/v1/races/.../results`, `/api/v1/results`, `/api/v1/championships/.../standings` | `app/results/router.py` |
+| `drivers_router` | `/api/v1/drivers` | `app/drivers/router.py` |
+| `dashboard_router` | `/api/v1/dashboard` | `app/dashboard/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -252,6 +261,12 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | PATCH | `/api/v1/results/{id}` | `results:update` | results |
 | DELETE | `/api/v1/results/{id}` | `results:delete` | results |
 | GET | `/api/v1/championships/{id}/standings` | `results:read` | results |
+| GET | `/api/v1/drivers/` | `drivers:read` | drivers |
+| GET | `/api/v1/drivers/{id}` | `drivers:read` | drivers |
+| POST | `/api/v1/drivers/` | `drivers:create` | drivers |
+| PATCH | `/api/v1/drivers/{id}` | `drivers:update` | drivers |
+| DELETE | `/api/v1/drivers/{id}` | `drivers:delete` | drivers |
+| GET | `/api/v1/dashboard/summary` | `championships:read` + `results:read` | dashboard |
 
 ---
 
@@ -501,7 +516,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (189) │  ← httpx AsyncClient against test app
+│ Integration (232) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
