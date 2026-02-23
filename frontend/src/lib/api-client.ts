@@ -339,3 +339,50 @@ export const dashboardApi = {
   getSummary: (token: string) =>
     apiRequest<DashboardSummary>("/dashboard/summary", {}, token),
 };
+
+/**
+ * Notifications API calls / Chamadas da API de notificacoes.
+ */
+import type {
+  NotificationListItem,
+  Notification,
+  UnreadCount,
+} from "@/types/notification";
+
+export const notificationsApi = {
+  list: (token: string, params?: { is_read?: boolean; type?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.is_read !== undefined) query.set("is_read", String(params.is_read));
+    if (params?.type) query.set("type", params.type);
+    const qs = query.toString();
+    return apiRequest<NotificationListItem[]>(`/notifications/${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  getUnreadCount: (token: string) =>
+    apiRequest<UnreadCount>("/notifications/unread-count", {}, token),
+
+  markAsRead: (token: string, id: string) =>
+    apiRequest<Notification>(`/notifications/${id}/read`, { method: "PATCH" }, token),
+
+  markAllAsRead: (token: string) =>
+    apiRequest<{ marked_count: number }>("/notifications/mark-all-read", { method: "POST" }, token),
+
+  delete: (token: string, id: string) =>
+    apiRequest<void>(`/notifications/${id}`, { method: "DELETE" }, token),
+
+  create: (
+    token: string,
+    data: {
+      type?: string;
+      title: string;
+      message: string;
+      entity_type?: string;
+      entity_id?: string;
+      user_ids?: string[];
+    },
+  ) =>
+    apiRequest<Notification[]>("/notifications/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+};

@@ -1,7 +1,9 @@
 /**
- * Dashboard layout with sidebar placeholder.
- * Layout do dashboard com placeholder de sidebar.
+ * Dashboard layout with sidebar.
+ * Layout do dashboard com sidebar.
  */
+import NotificationBadge from "@/components/layout/NotificationBadge";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -9,7 +11,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar placeholder / Placeholder da sidebar */}
+      {/* Sidebar / Barra lateral */}
       <aside className="w-64 bg-gray-900 p-4 text-white">
         <h2 className="mb-8 text-xl font-bold">TeamPrincipal</h2>
         <nav>

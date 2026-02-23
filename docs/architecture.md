@@ -115,6 +115,12 @@ backend/
 │   │   ├── service.py       # Aggregation queries + standings reuse
 │   │   └── schemas.py       # 5 Pydantic schemas
 │   │
+│   ├── notifications/        # Notifications module / Modulo de notificacoes
+│   │   ├── router.py        # 6 endpoints: list, unread-count, mark-read, mark-all, delete, create
+│   │   ├── service.py       # CRUD + broadcast + helper functions
+│   │   ├── models.py        # Notification model, NotificationType enum (native_enum=False)
+│   │   └── schemas.py       # 4 Pydantic schemas
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -136,6 +142,7 @@ backend/
 │   ├── test_championship_standings.py # 9 tests
 │   ├── test_drivers.py              # 30 tests
 │   ├── test_dashboard.py            # 13 tests
+│   ├── test_notifications.py        # 25 tests
 │   └── test_health.py               # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -205,6 +212,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `results_router` | `/api/v1/races/.../results`, `/api/v1/results`, `/api/v1/championships/.../standings` | `app/results/router.py` |
 | `drivers_router` | `/api/v1/drivers` | `app/drivers/router.py` |
 | `dashboard_router` | `/api/v1/dashboard` | `app/dashboard/router.py` |
+| `notifications_router` | `/api/v1/notifications` | `app/notifications/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -267,6 +275,12 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | PATCH | `/api/v1/drivers/{id}` | `drivers:update` | drivers |
 | DELETE | `/api/v1/drivers/{id}` | `drivers:delete` | drivers |
 | GET | `/api/v1/dashboard/summary` | `championships:read` + `results:read` | dashboard |
+| GET | `/api/v1/notifications/` | Authenticated | notifications |
+| GET | `/api/v1/notifications/unread-count` | Authenticated | notifications |
+| PATCH | `/api/v1/notifications/{id}/read` | Authenticated | notifications |
+| POST | `/api/v1/notifications/mark-all-read` | Authenticated | notifications |
+| DELETE | `/api/v1/notifications/{id}` | Authenticated | notifications |
+| POST | `/api/v1/notifications/` | `notifications:create` | notifications |
 
 ---
 
@@ -450,6 +464,21 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 ├─────────────────────────┤
 │ UQ(race_id, team_id)    │
 └─────────────────────────┘
+
+┌─────────────────────────┐
+│     notifications        │
+├─────────────────────────┤
+│ id           PK          │
+│ user_id      FK IDX      │──→ users.id (CASCADE)
+│ type         ENUM        │ race_scheduled/result_published/team_invite/championship_update/general
+│ title        VARCHAR(256)│
+│ message      TEXT         │
+│ entity_type  VARCHAR(64) │ nullable (race/championship/team)
+│ entity_id    UUID        │ nullable
+│ is_read      BOOL        │ default false
+│ created_at               │
+│ updated_at               │
+└─────────────────────────┘
 ```
 
 ### Conventions / Convencoes
@@ -478,7 +507,8 @@ frontend/src/
 │   ├── (dashboard)/     # Protected pages / Paginas protegidas
 │   │   ├── dashboard/
 │   │   ├── championships/  # List, detail, create, edit pages
-│   │   └── races/          # Detail, edit pages (list/create under championships)
+│   │   ├── races/          # Detail, edit pages (list/create under championships)
+│   │   └── notifications/  # Notifications list with filters and actions
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
 │   ├── ui/              # Reusable UI components / Componentes UI reutilizaveis
@@ -516,7 +546,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (232) │  ← httpx AsyncClient against test app
+│ Integration (257) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
