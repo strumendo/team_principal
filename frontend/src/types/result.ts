@@ -7,6 +7,7 @@ export interface RaceResult {
   id: string;
   race_id: string;
   team_id: string;
+  driver_id: string | null;
   position: number;
   points: number;
   laps_completed: number | null;
@@ -25,8 +26,17 @@ export interface RaceResultTeam {
   is_active: boolean;
 }
 
+export interface RaceResultDriver {
+  id: string;
+  name: string;
+  display_name: string;
+  abbreviation: string;
+  number: number;
+}
+
 export interface RaceResultDetail extends RaceResult {
   team: RaceResultTeam;
+  driver: RaceResultDriver | null;
 }
 
 export interface ChampionshipStanding {

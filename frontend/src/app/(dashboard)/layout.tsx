@@ -34,11 +34,10 @@ export default function DashboardLayout({
             </li>
             <li>
               <a
-                href="/notifications"
-                className="flex items-center rounded px-3 py-2 hover:bg-gray-800"
+                href="/drivers"
+                className="block rounded px-3 py-2 hover:bg-gray-800"
               >
-                Notifications / Notificacoes
-                <NotificationBadge />
+                Drivers / Pilotos
               </a>
             </li>
           </ul>

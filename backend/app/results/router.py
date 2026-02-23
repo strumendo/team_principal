@@ -12,6 +12,7 @@ from app.core.dependencies import require_permissions
 from app.db.session import get_db
 from app.results.schemas import (
     ChampionshipStandingResponse,
+    DriverStandingResponse,
     RaceResultCreateRequest,
     RaceResultDetailResponse,
     RaceResultListResponse,
@@ -22,6 +23,7 @@ from app.results.service import (
     create_result,
     delete_result,
     get_championship_standings,
+    get_driver_championship_standings,
     get_result_by_id,
     list_race_results,
     update_result,
@@ -66,6 +68,7 @@ async def create_new_result(
         dnf=body.dnf,
         dsq=body.dsq,
         notes=body.notes,
+        driver_id=body.driver_id,
     )
 
 
@@ -104,6 +107,7 @@ async def update_existing_result(
         dnf=body.dnf,
         dsq=body.dsq,
         notes=body.notes,
+        driver_id=body.driver_id,
     )
 
 
@@ -118,6 +122,22 @@ async def read_championship_standings(
     Obtem classificacao do campeonato agregada dos resultados de corrida.
     """
     return await get_championship_standings(db, championship_id)
+
+
+@router.get(
+    "/api/v1/championships/{championship_id}/driver-standings",
+    response_model=list[DriverStandingResponse],
+)
+async def read_driver_championship_standings(
+    championship_id: uuid.UUID,
+    _current_user: User = Depends(require_permissions("results:read")),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:  # type: ignore[type-arg]
+    """
+    Get driver championship standings aggregated from race results.
+    Obtem classificacao de pilotos no campeonato agregada dos resultados de corrida.
+    """
+    return await get_driver_championship_standings(db, championship_id)
 
 
 @router.delete("/api/v1/results/{result_id}", status_code=204)
