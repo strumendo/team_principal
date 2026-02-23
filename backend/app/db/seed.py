@@ -160,6 +160,21 @@ SYSTEM_PERMISSIONS = [
     {"codename": "drivers:create", "module": "drivers", "description": "Create drivers / Criar pilotos"},
     {"codename": "drivers:update", "module": "drivers", "description": "Update drivers / Atualizar pilotos"},
     {"codename": "drivers:delete", "module": "drivers", "description": "Delete drivers / Excluir pilotos"},
+    {
+        "codename": "notifications:read",
+        "module": "notifications",
+        "description": "Read notifications / Ler notificacoes",
+    },
+    {
+        "codename": "notifications:create",
+        "module": "notifications",
+        "description": "Create notifications / Criar notificacoes",
+    },
+    {
+        "codename": "notifications:delete",
+        "module": "notifications",
+        "description": "Delete notifications / Excluir notificacoes",
+    },
 ]
 
 
@@ -207,6 +222,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "races:read",
         "results:read",
         "drivers:read",
+        "notifications:read",
     ],
 }
 
