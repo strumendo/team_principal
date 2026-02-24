@@ -138,8 +138,9 @@ backend/
 │   ├── test_championship_entries.py # 13 tests
 │   ├── test_races.py              # 22 tests
 │   ├── test_race_entries.py       # 13 tests
-│   ├── test_race_results.py       # 23 tests
+│   ├── test_race_results.py       # 28 tests
 │   ├── test_championship_standings.py # 9 tests
+│   ├── test_driver_standings.py     # 8 tests
 │   ├── test_drivers.py              # 30 tests
 │   ├── test_dashboard.py            # 13 tests
 │   ├── test_notifications.py        # 25 tests
@@ -271,6 +272,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | PATCH | `/api/v1/results/{id}` | `results:update` | results |
 | DELETE | `/api/v1/results/{id}` | `results:delete` | results |
 | GET | `/api/v1/championships/{id}/standings` | `results:read` | results |
+| GET | `/api/v1/championships/{id}/driver-standings` | `results:read` | results |
 | GET | `/api/v1/drivers/` | `drivers:read` | drivers |
 | GET | `/api/v1/drivers/{id}` | `drivers:read` | drivers |
 | POST | `/api/v1/drivers/` | `drivers:create` | drivers |

@@ -266,6 +266,41 @@ Computes standings dynamically by aggregating non-DSQ race results:
 ]
 ```
 
+### Get Driver Championship Standings / Obter Classificacao de Pilotos do Campeonato
+
+```
+GET /api/v1/championships/{championship_id}/driver-standings
+```
+
+**Permission:** `results:read`
+**Response:** `200 OK` — `list[DriverStandingResponse]`
+
+Computes driver standings dynamically by aggregating non-DSQ race results that have a `driver_id`:
+- `total_points`: SUM of points from all non-DSQ results for the driver
+- `races_scored`: COUNT of non-DSQ race results
+- `wins`: COUNT of position=1 non-DSQ results
+- Results without a driver are excluded
+- Ordered by `total_points` descending
+- `position` is 1-indexed based on order
+
+**Response example:**
+```json
+[
+    {
+        "position": 1,
+        "driver_id": "uuid",
+        "driver_name": "driver_alpha",
+        "driver_display_name": "Driver Alpha",
+        "team_id": "uuid",
+        "team_name": "team_alpha",
+        "team_display_name": "Team Alpha",
+        "total_points": 50.0,
+        "races_scored": 2,
+        "wins": 2
+    }
+]
+```
+
 ---
 
 ## Error Responses / Respostas de Erro
@@ -294,6 +329,7 @@ Computes standings dynamically by aggregating non-DSQ race results:
 | `update_result(db, result, ...)` | Partial update with position check | Atualizacao parcial com verificacao |
 | `delete_result(db, result)` | Delete result | Exclui resultado |
 | `get_championship_standings(db, champ_id)` | Aggregate standings computation | Calculo agregado de classificacao |
+| `get_driver_championship_standings(db, champ_id)` | Driver standings computation | Calculo de classificacao de pilotos |
 
 ---
 
@@ -314,7 +350,7 @@ Cria a tabela `race_results` com todas as colunas, indices em `race_id` e `team_
 
 ## Test Coverage / Cobertura de Testes
 
-### Race Results Tests / Testes de Resultados (`test_race_results.py` — 23 tests)
+### Race Results Tests / Testes de Resultados (`test_race_results.py` — 28 tests)
 
 | Test | Category |
 |---|---|
@@ -331,8 +367,13 @@ Cria a tabela `race_results` com todas as colunas, indices em `race_id` e `team_
 | `test_create_result_dsq_allows_duplicate_position` | Create |
 | `test_create_result_race_not_found` | Create (404) |
 | `test_create_result_team_not_found` | Create (404) |
+| `test_create_result_with_driver` | Create + Driver |
+| `test_create_result_driver_wrong_team` | Create + Driver (409) |
+| `test_create_result_driver_not_found` | Create + Driver (404) |
 | `test_get_result_by_id` | Get |
 | `test_get_result_not_found` | Get |
+| `test_get_result_detail_includes_driver` | Get + Driver |
+| `test_get_result_detail_driver_null` | Get + Driver |
 | `test_update_result_points` | Update |
 | `test_update_result_position_conflict` | Update (409) |
 | `test_update_result_dsq_bypasses_position_check` | Update |
@@ -356,4 +397,17 @@ Cria a tabela `race_results` com todas as colunas, indices em `race_id` e `team_
 | `test_get_standings_unauthorized` | Auth (401) |
 | `test_get_standings_forbidden` | Auth (403) |
 
-**Total: 32 new tests, ~189 total across the project.**
+### Driver Standings Tests / Testes de Classificacao de Pilotos (`test_driver_standings.py` — 8 tests)
+
+| Test | Category |
+|---|---|
+| `test_get_driver_standings_empty` | Empty |
+| `test_get_driver_standings_ordered_by_points` | Ordering |
+| `test_get_driver_standings_excludes_dsq` | DSQ exclusion |
+| `test_get_driver_standings_counts_wins` | Wins count |
+| `test_get_driver_standings_ignores_results_without_driver` | No driver filter |
+| `test_get_driver_standings_championship_not_found` | Error (404) |
+| `test_get_driver_standings_unauthorized` | Auth (401) |
+| `test_get_driver_standings_forbidden` | Auth (403) |
+
+**Total: 45 tests across 3 test files (28 + 9 + 8). 284 total across the project.**

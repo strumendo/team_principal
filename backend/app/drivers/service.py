@@ -78,9 +78,7 @@ async def create_driver(
         raise ConflictException("Driver abbreviation already exists")
 
     # Validate number uniqueness within team / Valida unicidade do numero dentro da equipe
-    num_query = await db.execute(
-        select(Driver).where(Driver.team_id == team_id, Driver.number == number)
-    )
+    num_query = await db.execute(select(Driver).where(Driver.team_id == team_id, Driver.number == number))
     if num_query.scalar_one_or_none() is not None:
         raise ConflictException("Number already taken within this team")
 
@@ -123,9 +121,7 @@ async def update_driver(
 
     # Validate number uniqueness within team if changed / Valida unicidade do numero se alterado
     if number is not None and number != driver.number:
-        num_query = await db.execute(
-            select(Driver).where(Driver.team_id == driver.team_id, Driver.number == number)
-        )
+        num_query = await db.execute(select(Driver).where(Driver.team_id == driver.team_id, Driver.number == number))
         if num_query.scalar_one_or_none() is not None:
             raise ConflictException("Number already taken within this team")
 
