@@ -85,7 +85,7 @@ async def mark_all_as_read(db: AsyncSession, user_id: uuid.UUID) -> int:
     )
     result = await db.execute(stmt)
     await db.commit()
-    return result.rowcount  # type: ignore[return-value]
+    return result.rowcount  # type: ignore[no-any-return, attr-defined]
 
 
 async def delete_notification(db: AsyncSession, notification: Notification, user_id: uuid.UUID) -> None:

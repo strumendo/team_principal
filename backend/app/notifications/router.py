@@ -72,11 +72,11 @@ async def mark_notification_read(
     return await mark_as_read(db, notification, current_user.id)  # type: ignore[return-value]
 
 
-@router.post("/mark-all-read", response_model=dict)
+@router.post("/mark-all-read", response_model=dict[str, int])
 async def mark_all_notifications_read(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> dict[str, int]:
     """
     Mark all unread notifications as read.
     Marca todas as notificacoes nao lidas como lidas.
