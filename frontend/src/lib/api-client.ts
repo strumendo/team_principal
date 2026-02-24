@@ -388,6 +388,49 @@ export const notificationsApi = {
 };
 
 /**
+ * Uploads API calls / Chamadas da API de uploads.
+ */
+async function uploadFile(
+  endpoint: string,
+  file: File,
+  token: string,
+): Promise<ApiResponse<{ url: string }>> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      return {
+        error: errorData?.detail || `Upload failed with status ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    return { data };
+  } catch {
+    return { error: "Network error. Please try again." };
+  }
+}
+
+export const uploadsApi = {
+  uploadUserAvatar: (token: string, userId: string, file: File) =>
+    uploadFile(`/uploads/users/${userId}/avatar`, file, token),
+
+  uploadTeamLogo: (token: string, teamId: string, file: File) =>
+    uploadFile(`/uploads/teams/${teamId}/logo`, file, token),
+
+  uploadDriverPhoto: (token: string, driverId: string, file: File) =>
+    uploadFile(`/uploads/drivers/${driverId}/photo`, file, token),
+};
+
+/**
  * Admin Users API calls / Chamadas da API admin de usuarios.
  */
 import type {

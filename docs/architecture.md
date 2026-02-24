@@ -121,6 +121,11 @@ backend/
 │   │   ├── models.py        # Notification model, NotificationType enum (native_enum=False)
 │   │   └── schemas.py       # 4 Pydantic schemas
 │   │
+│   ├── uploads/              # File upload module / Modulo de upload de arquivos
+│   │   ├── router.py        # 3 endpoints: user avatar, team logo, driver photo
+│   │   ├── storage.py       # Local filesystem save/delete functions
+│   │   └── schemas.py       # UploadResponse schema
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -144,6 +149,7 @@ backend/
 │   ├── test_drivers.py              # 30 tests
 │   ├── test_dashboard.py            # 13 tests
 │   ├── test_notifications.py        # 25 tests
+│   ├── test_uploads.py              # 14 tests
 │   └── test_health.py               # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -214,6 +220,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `drivers_router` | `/api/v1/drivers` | `app/drivers/router.py` |
 | `dashboard_router` | `/api/v1/dashboard` | `app/dashboard/router.py` |
 | `notifications_router` | `/api/v1/notifications` | `app/notifications/router.py` |
+| `uploads_router` | `/api/v1/uploads` | `app/uploads/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -285,6 +292,9 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | POST | `/api/v1/notifications/mark-all-read` | Authenticated | notifications |
 | DELETE | `/api/v1/notifications/{id}` | Authenticated | notifications |
 | POST | `/api/v1/notifications/` | `notifications:create` | notifications |
+| POST | `/api/v1/uploads/users/{id}/avatar` | Own user OR `users:update` | uploads |
+| POST | `/api/v1/uploads/teams/{id}/logo` | `teams:update` | uploads |
+| POST | `/api/v1/uploads/drivers/{id}/photo` | `drivers:update` | uploads |
 
 ---
 
@@ -512,10 +522,12 @@ frontend/src/
 │   │   ├── dashboard/
 │   │   ├── championships/  # List, detail, create, edit pages
 │   │   ├── races/          # Detail, edit pages (list/create under championships)
+│   │   ├── drivers/           # Drivers list page
 │   │   ├── notifications/  # Notifications list with filters and actions
 │   │   └── admin/          # Admin panel (users, roles, permissions)
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
+│   ├── ImageUpload.tsx  # Reusable image upload with preview / Upload de imagem reutilizavel com preview
 │   ├── ui/              # Reusable UI components / Componentes UI reutilizaveis
 │   ├── auth/            # Auth-specific components
 │   └── layout/          # Layout components
@@ -551,7 +563,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (284) │  ← httpx AsyncClient against test app
+│ Integration (298) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
