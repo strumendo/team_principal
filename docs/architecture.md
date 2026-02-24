@@ -75,10 +75,10 @@ backend/
 │   │   └── schemas.py       # LoginRequest, RegisterRequest, TokenResponse
 │   │
 │   ├── users/               # Users module / Modulo de usuarios
-│   │   ├── router.py        # GET /me, PATCH /me, GET /{id}
-│   │   ├── service.py       # get_user_by_id, update_user
+│   │   ├── router.py        # GET /me, PATCH /me, GET /, GET /{id}, PATCH /{id}
+│   │   ├── service.py       # get_user_by_id, update_user, list_users, admin_update_user
 │   │   ├── models.py        # User ORM model
-│   │   └── schemas.py       # UserResponse, UserUpdateRequest
+│   │   └── schemas.py       # UserResponse, UserListResponse, UserUpdate, AdminUserUpdate
 │   │
 │   ├── roles/               # RBAC module / Modulo RBAC
 │   │   ├── router.py        # 3 routers: permissions, roles, user-roles
@@ -127,7 +127,7 @@ backend/
 ├── tests/                   # pytest test suite
 │   ├── conftest.py          # Fixtures: db, client, users, auth headers
 │   ├── test_auth.py         # 7 tests
-│   ├── test_users.py        # 5 tests
+│   ├── test_users.py        # 19 tests
 │   ├── test_permissions.py  # 7 tests
 │   ├── test_roles.py        # 13 tests
 │   ├── test_rbac.py         # 12 tests
@@ -225,7 +225,9 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | POST | `/api/v1/auth/refresh` | None | auth |
 | GET | `/api/v1/users/me` | Bearer token | users |
 | PATCH | `/api/v1/users/me` | Bearer token | users |
+| GET | `/api/v1/users/` | `users:list` | users |
 | GET | `/api/v1/users/{id}` | `users:read` | users |
+| PATCH | `/api/v1/users/{id}` | `users:update` | users |
 | GET | `/api/v1/permissions/` | `permissions:read` | roles |
 | GET | `/api/v1/permissions/{id}` | `permissions:read` | roles |
 | POST | `/api/v1/permissions/` | `permissions:create` | roles |
@@ -508,7 +510,8 @@ frontend/src/
 │   │   ├── dashboard/
 │   │   ├── championships/  # List, detail, create, edit pages
 │   │   ├── races/          # Detail, edit pages (list/create under championships)
-│   │   └── notifications/  # Notifications list with filters and actions
+│   │   ├── notifications/  # Notifications list with filters and actions
+│   │   └── admin/          # Admin panel (users, roles, permissions)
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
 │   ├── ui/              # Reusable UI components / Componentes UI reutilizaveis
@@ -546,7 +549,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (257) │  ← httpx AsyncClient against test app
+│ Integration (284) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API

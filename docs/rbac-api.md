@@ -152,9 +152,9 @@ Role.users ←→ User.roles               # via user_roles
 | `auth:register` | `auth` | Register new users / Registrar novos usuarios |
 | `users:read` | `users` | Read any user profile / Ler perfil de qualquer usuario |
 | `users:read_self` | `users` | Read own profile / Ler perfil proprio |
-| `users:update` | `users` | Update any user / Atualizar qualquer usuario |
+| `users:update` | `users` | Update any user — `PATCH /users/{id}` / Atualizar qualquer usuario |
 | `users:update_self` | `users` | Update own profile / Atualizar perfil proprio |
-| `users:list` | `users` | List all users / Listar todos os usuarios |
+| `users:list` | `users` | List all users — `GET /users/` / Listar todos os usuarios |
 | `users:delete` | `users` | Delete users / Excluir usuarios |
 | `roles:read` | `roles` | Read roles / Ler papeis |
 | `roles:create` | `roles` | Create roles / Criar papeis |
@@ -631,9 +631,9 @@ O banco de dados de testes usa SQLite em memoria — nao precisa de PostgreSQL p
 | `tests/test_rbac.py` | 12 | Permission enforcement, superuser bypass, role/permission AND/OR logic |
 | `tests/test_user_roles.py` | 10 | User-role assignment/revocation + assigned_by audit |
 | `tests/test_auth.py` | 7 | Authentication (register, login, refresh) |
-| `tests/test_users.py` | 5 | User profile operations |
+| `tests/test_users.py` | 19 | User profile + admin list/update operations |
 | `tests/test_health.py` | 2 | Health check endpoints |
-| **Total** | **56** | |
+| **Total** | **70** | |
 
 ### Key Test Fixtures / Fixtures Chave
 
