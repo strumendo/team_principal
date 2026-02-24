@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.championships.models import Championship
 from app.core.exceptions import ConflictException, NotFoundException
 from app.drivers.models import Driver
+from app.penalties.models import Penalty
 from app.races.models import Race, RaceStatus, race_entries
 from app.results.models import RaceResult
 from app.teams.models import Team
@@ -250,19 +251,43 @@ async def get_championship_standings(db: AsyncSession, championship_id: uuid.UUI
     wins_result = await db.execute(wins_stmt)
     wins_map: dict[uuid.UUID, int] = {row.team_id: row.wins for row in wins_result.all()}
 
+    # Penalty deductions query / Query de deducoes de penalidade
+    deduction_stmt = (
+        select(
+            Penalty.team_id,
+            func.sum(Penalty.points_deducted).label("total_deducted"),
+        )
+        .join(Race, Penalty.race_id == Race.id)
+        .where(
+            Race.championship_id == championship_id,
+            Penalty.penalty_type == "points_deduction",
+            Penalty.is_active == True,  # noqa: E712
+        )
+        .group_by(Penalty.team_id)
+    )
+    deduction_result = await db.execute(deduction_stmt)
+    deduction_map: dict[uuid.UUID, float] = {
+        row.team_id: float(row.total_deducted) for row in deduction_result.all()
+    }
+
     standings: list[dict[str, Any]] = []
-    for idx, row in enumerate(points_rows, start=1):
+    for row in points_rows:
         standings.append(
             {
-                "position": idx,
+                "position": 0,
                 "team_id": row.team_id,
                 "team_name": row.team_name,
                 "team_display_name": row.team_display_name,
-                "total_points": float(row.total_points),
+                "total_points": float(row.total_points) - deduction_map.get(row.team_id, 0.0),
                 "races_scored": row.races_scored,
                 "wins": wins_map.get(row.team_id, 0),
             }
         )
+
+    # Re-sort by total_points desc and assign positions / Re-ordena por pontos e atribui posicoes
+    standings.sort(key=lambda s: s["total_points"], reverse=True)
+    for idx, entry in enumerate(standings, start=1):
+        entry["position"] = idx
 
     return standings
 
@@ -335,11 +360,31 @@ async def get_driver_championship_standings(db: AsyncSession, championship_id: u
     wins_result = await db.execute(wins_stmt)
     wins_map: dict[uuid.UUID, int] = {row.driver_id: row.wins for row in wins_result.all()}
 
+    # Penalty deductions per driver / Deducoes de penalidade por piloto
+    driver_deduction_stmt = (
+        select(
+            Penalty.driver_id,
+            func.sum(Penalty.points_deducted).label("total_deducted"),
+        )
+        .join(Race, Penalty.race_id == Race.id)
+        .where(
+            Race.championship_id == championship_id,
+            Penalty.penalty_type == "points_deduction",
+            Penalty.is_active == True,  # noqa: E712
+            Penalty.driver_id.isnot(None),
+        )
+        .group_by(Penalty.driver_id)
+    )
+    driver_deduction_result = await db.execute(driver_deduction_stmt)
+    driver_deduction_map: dict[uuid.UUID, float] = {
+        row.driver_id: float(row.total_deducted) for row in driver_deduction_result.all()
+    }
+
     standings: list[dict[str, Any]] = []
-    for idx, row in enumerate(points_rows, start=1):
+    for row in points_rows:
         standings.append(
             {
-                "position": idx,
+                "position": 0,
                 "driver_id": row.driver_id,
                 "driver_name": row.driver_name,
                 "driver_display_name": row.driver_display_name,
@@ -347,10 +392,15 @@ async def get_driver_championship_standings(db: AsyncSession, championship_id: u
                 "team_id": row.team_id,
                 "team_name": row.team_name,
                 "team_display_name": row.team_display_name,
-                "total_points": float(row.total_points),
+                "total_points": float(row.total_points) - driver_deduction_map.get(row.driver_id, 0.0),
                 "races_scored": row.races_scored,
                 "wins": wins_map.get(row.driver_id, 0),
             }
         )
+
+    # Re-sort by total_points desc and assign positions / Re-ordena por pontos e atribui posicoes
+    standings.sort(key=lambda s: s["total_points"], reverse=True)
+    for idx, entry in enumerate(standings, start=1):
+        entry["position"] = idx
 
     return standings
