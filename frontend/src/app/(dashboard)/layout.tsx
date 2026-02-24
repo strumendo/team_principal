@@ -41,6 +41,38 @@ export default function DashboardLayout({
               </a>
             </li>
           </ul>
+          {/* Admin section / Secao admin */}
+          <div className="mt-6 border-t border-gray-700 pt-4">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase text-gray-400">
+              Admin
+            </p>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="/admin/users"
+                  className="block rounded px-3 py-2 hover:bg-gray-800"
+                >
+                  Users / Usuarios
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/admin/roles"
+                  className="block rounded px-3 py-2 hover:bg-gray-800"
+                >
+                  Roles / Papeis
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/admin/permissions"
+                  className="block rounded px-3 py-2 hover:bg-gray-800"
+                >
+                  Permissions / Permissoes
+                </a>
+              </li>
+            </ul>
+          </div>
         </nav>
       </aside>
       {/* Main content / Conteudo principal */}
