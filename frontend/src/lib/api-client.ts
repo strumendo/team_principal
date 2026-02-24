@@ -386,3 +386,95 @@ export const notificationsApi = {
       body: JSON.stringify(data),
     }, token),
 };
+
+/**
+ * Admin Users API calls / Chamadas da API admin de usuarios.
+ */
+import type {
+  AdminUser,
+  AdminRole,
+  AdminRoleDetail,
+  AdminPermission,
+} from "@/types/admin";
+
+export const adminUsersApi = {
+  list: (token: string, params?: { is_active?: boolean; search?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.is_active !== undefined) query.set("is_active", String(params.is_active));
+    if (params?.search) query.set("search", params.search);
+    const qs = query.toString();
+    return apiRequest<AdminUser[]>(`/users/${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  get: (token: string, id: string) =>
+    apiRequest<AdminUser>(`/users/${id}`, {}, token),
+
+  update: (token: string, id: string, data: { full_name?: string; email?: string; is_active?: boolean }) =>
+    apiRequest<AdminUser>(`/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  getRoles: (token: string, userId: string) =>
+    apiRequest<AdminRole[]>(`/users/${userId}/roles`, {}, token),
+
+  assignRole: (token: string, userId: string, roleId: string) =>
+    apiRequest<AdminRole[]>(`/users/${userId}/roles`, {
+      method: "POST",
+      body: JSON.stringify({ role_id: roleId }),
+    }, token),
+
+  revokeRole: (token: string, userId: string, roleId: string) =>
+    apiRequest<AdminRole[]>(`/users/${userId}/roles/${roleId}`, {
+      method: "DELETE",
+    }, token),
+};
+
+/**
+ * Admin Roles API calls / Chamadas da API admin de papeis.
+ */
+export const adminRolesApi = {
+  list: (token: string) =>
+    apiRequest<AdminRole[]>("/roles/", {}, token),
+
+  get: (token: string, id: string) =>
+    apiRequest<AdminRoleDetail>(`/roles/${id}`, {}, token),
+
+  create: (token: string, data: { name: string; display_name: string; description?: string }) =>
+    apiRequest<AdminRoleDetail>("/roles/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  update: (token: string, id: string, data: { display_name?: string; description?: string }) =>
+    apiRequest<AdminRoleDetail>(`/roles/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  delete: (token: string, id: string) =>
+    apiRequest<void>(`/roles/${id}`, { method: "DELETE" }, token),
+
+  assignPermission: (token: string, roleId: string, permissionId: string) =>
+    apiRequest<AdminRoleDetail>(`/roles/${roleId}/permissions`, {
+      method: "POST",
+      body: JSON.stringify({ permission_id: permissionId }),
+    }, token),
+
+  revokePermission: (token: string, roleId: string, permissionId: string) =>
+    apiRequest<AdminRoleDetail>(`/roles/${roleId}/permissions/${permissionId}`, {
+      method: "DELETE",
+    }, token),
+};
+
+/**
+ * Admin Permissions API calls / Chamadas da API admin de permissoes.
+ */
+export const adminPermissionsApi = {
+  list: (token: string, params?: { module?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.module) query.set("module", params.module);
+    const qs = query.toString();
+    return apiRequest<AdminPermission[]>(`/permissions/${qs ? `?${qs}` : ""}`, {}, token);
+  },
+};

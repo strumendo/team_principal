@@ -4,15 +4,16 @@ Router da API de usuarios.
 """
 
 import uuid
+from collections.abc import Sequence
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_active_user, require_permissions
 from app.db.session import get_db
 from app.users.models import User
-from app.users.schemas import UserResponse, UserUpdate
-from app.users.service import get_user_by_id, update_user
+from app.users.schemas import AdminUserUpdate, UserListResponse, UserResponse, UserUpdate
+from app.users.service import admin_update_user, get_user_by_id, list_users, update_user
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -41,6 +42,20 @@ async def update_current_user(
     return await update_user(db, current_user, full_name=body.full_name, avatar_url=body.avatar_url)
 
 
+@router.get("/", response_model=list[UserListResponse])
+async def list_all_users(
+    is_active: bool | None = Query(None),
+    search: str | None = Query(None),
+    _current_user: User = Depends(require_permissions("users:list")),
+    db: AsyncSession = Depends(get_db),
+) -> Sequence[User]:
+    """
+    List all users (requires users:list permission).
+    Lista todos os usuarios (requer permissao users:list).
+    """
+    return await list_users(db, is_active=is_active, search=search)
+
+
 @router.get("/{user_id}", response_model=UserResponse)
 async def read_user(
     user_id: uuid.UUID,
@@ -52,3 +67,18 @@ async def read_user(
     Busca um usuario por ID (requer permissao users:read).
     """
     return await get_user_by_id(db, user_id)
+
+
+@router.patch("/{user_id}", response_model=UserResponse)
+async def admin_update(
+    user_id: uuid.UUID,
+    body: AdminUserUpdate,
+    _current_user: User = Depends(require_permissions("users:update")),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    Admin update a user (requires users:update permission).
+    Atualizacao de usuario pelo admin (requer permissao users:update).
+    """
+    user = await get_user_by_id(db, user_id)
+    return await admin_update_user(db, user, full_name=body.full_name, email=body.email, is_active=body.is_active)
