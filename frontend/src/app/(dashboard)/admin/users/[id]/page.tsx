@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import type { AdminUser, AdminRole } from "@/types/admin";
 import { adminUsersApi, adminRolesApi } from "@/lib/api-client";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function AdminUserDetailPage() {
   const { data: session } = useSession();
@@ -135,6 +136,18 @@ export default function AdminUserDetailPage() {
           {message}
         </p>
       )}
+
+      {/* Avatar upload / Upload de avatar */}
+      <div className="mb-8 max-w-lg rounded border p-6">
+        <h2 className="mb-4 text-xl font-semibold">Avatar</h2>
+        <ImageUpload
+          currentImageUrl={user.avatar_url}
+          uploadUrl={`/uploads/users/${userId}/avatar`}
+          token={getToken()}
+          onUploadSuccess={(url) => setUser({ ...user, avatar_url: url })}
+          label="User Avatar / Avatar do Usuario"
+        />
+      </div>
 
       {/* Edit form / Formulario de edicao */}
       <div className="mb-8 max-w-lg rounded border p-6">
