@@ -331,6 +331,63 @@ export const resultsApi = {
 };
 
 /**
+ * Penalties API calls / Chamadas da API de penalidades.
+ */
+import type {
+  Penalty,
+  PenaltyDetail,
+} from "@/types/penalty";
+
+export const penaltiesApi = {
+  listByRace: (token: string, raceId: string) =>
+    apiRequest<Penalty[]>(`/races/${raceId}/penalties`, {}, token),
+
+  get: (token: string, id: string) =>
+    apiRequest<PenaltyDetail>(`/penalties/${id}`, {}, token),
+
+  create: (
+    token: string,
+    raceId: string,
+    data: {
+      team_id: string;
+      driver_id?: string;
+      result_id?: string;
+      penalty_type: string;
+      reason: string;
+      points_deducted?: number;
+      time_penalty_seconds?: number;
+      lap_number?: number;
+    },
+  ) =>
+    apiRequest<Penalty>(`/races/${raceId}/penalties`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  update: (
+    token: string,
+    id: string,
+    data: {
+      penalty_type?: string;
+      reason?: string;
+      points_deducted?: number;
+      time_penalty_seconds?: number;
+      lap_number?: number;
+      result_id?: string;
+      driver_id?: string;
+      is_active?: boolean;
+    },
+  ) =>
+    apiRequest<Penalty>(`/penalties/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  delete: (token: string, id: string) =>
+    apiRequest<void>(`/penalties/${id}`, { method: "DELETE" }, token),
+};
+
+/**
  * Dashboard API calls / Chamadas da API do dashboard.
  */
 import type { DashboardSummary } from "@/types/dashboard";
