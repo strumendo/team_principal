@@ -5,9 +5,11 @@ Fabrica da aplicacao FastAPI.
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.auth.router import router as auth_router
 from app.championships.router import router as championships_router
@@ -20,6 +22,7 @@ from app.races.router import router as races_router
 from app.results.router import router as results_router
 from app.roles.router import permissions_router, roles_router, user_roles_router
 from app.teams.router import router as teams_router
+from app.uploads.router import router as uploads_router
 from app.users.router import router as users_router
 
 
@@ -29,7 +32,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     Application lifespan: startup and shutdown events.
     Ciclo de vida da aplicacao: eventos de inicializacao e encerramento.
     """
-    # Startup / Inicializacao
+    # Startup: create uploads directory / Inicializacao: criar diretorio de uploads
+    Path(settings.UPLOAD_DIR).mkdir(exist_ok=True)
     yield
     # Shutdown / Encerramento
 
@@ -69,6 +73,12 @@ def create_app() -> FastAPI:
     app.include_router(drivers_router)
     app.include_router(dashboard_router)
     app.include_router(notifications_router)
+    app.include_router(uploads_router)
+
+    # Static files: serve uploaded images / Arquivos estaticos: servir imagens enviadas
+    upload_path = Path(settings.UPLOAD_DIR)
+    upload_path.mkdir(exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=upload_path), name="uploads")
 
     return app
 

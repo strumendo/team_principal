@@ -48,3 +48,13 @@ class ForbiddenException(HTTPException):
 
     def __init__(self, detail: str = "Not enough permissions") -> None:
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+
+
+class ValidationException(HTTPException):
+    """
+    Raised when input validation fails (e.g. invalid file type or size).
+    Lancada quando a validacao de entrada falha (ex: tipo ou tamanho de arquivo invalido).
+    """
+
+    def __init__(self, detail: str = "Validation error") -> None:
+        super().__init__(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)

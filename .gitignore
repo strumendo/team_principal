@@ -15,8 +15,8 @@ pip-log.txt
 pip-delete-this-directory.txt
 .Python
 develop-eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -98,6 +98,11 @@ Desktop.ini
 # Docker
 # ============================================================
 docker-compose.override.yml
+
+# ============================================================
+# Uploads / Arquivos enviados
+# ============================================================
+/uploads/
 
 # ============================================================
 # Misc
