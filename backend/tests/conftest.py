@@ -15,6 +15,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.drivers.models import Driver  # noqa: F401
 from app.notifications.models import Notification  # noqa: F401
+from app.penalties.models import Penalty  # noqa: F401
 from app.main import create_app
 from app.races.models import Race, race_entries  # noqa: F401
 from app.results.models import RaceResult  # noqa: F401
@@ -147,6 +148,10 @@ async def admin_user(db_session: AsyncSession) -> User:
         ("notifications:read", "notifications"),
         ("notifications:create", "notifications"),
         ("notifications:delete", "notifications"),
+        ("penalties:read", "penalties"),
+        ("penalties:create", "penalties"),
+        ("penalties:update", "penalties"),
+        ("penalties:delete", "penalties"),
     ]:
         perm = Permission(codename=codename, module=module)
         db_session.add(perm)

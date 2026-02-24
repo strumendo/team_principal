@@ -126,6 +126,12 @@ backend/
 │   │   ├── storage.py       # Local filesystem save/delete functions
 │   │   └── schemas.py       # UploadResponse schema
 │   │
+│   ├── penalties/            # Penalties module / Modulo de penalidades
+│   │   ├── router.py        # 5 endpoints: list by race, create, get, update, delete
+│   │   ├── service.py       # CRUD + DSQ sync + standings impact business logic
+│   │   ├── models.py        # Penalty model, PenaltyType enum (native_enum=False)
+│   │   └── schemas.py       # 5 Pydantic schemas
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -150,6 +156,9 @@ backend/
 │   ├── test_dashboard.py            # 13 tests
 │   ├── test_notifications.py        # 25 tests
 │   ├── test_uploads.py              # 14 tests
+│   ├── test_penalties.py            # 24 tests
+│   ├── test_penalty_dsq_sync.py     # 8 tests
+│   ├── test_penalty_standings.py    # 6 tests
 │   └── test_health.py               # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -221,6 +230,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `dashboard_router` | `/api/v1/dashboard` | `app/dashboard/router.py` |
 | `notifications_router` | `/api/v1/notifications` | `app/notifications/router.py` |
 | `uploads_router` | `/api/v1/uploads` | `app/uploads/router.py` |
+| `penalties_router` | `/api/v1/races/.../penalties`, `/api/v1/penalties` | `app/penalties/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -295,6 +305,11 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | POST | `/api/v1/uploads/users/{id}/avatar` | Own user OR `users:update` | uploads |
 | POST | `/api/v1/uploads/teams/{id}/logo` | `teams:update` | uploads |
 | POST | `/api/v1/uploads/drivers/{id}/photo` | `drivers:update` | uploads |
+| GET | `/api/v1/races/{id}/penalties` | `penalties:read` | penalties |
+| POST | `/api/v1/races/{id}/penalties` | `penalties:create` | penalties |
+| GET | `/api/v1/penalties/{id}` | `penalties:read` | penalties |
+| PATCH | `/api/v1/penalties/{id}` | `penalties:update` | penalties |
+| DELETE | `/api/v1/penalties/{id}` | `penalties:delete` | penalties |
 
 ---
 
@@ -493,6 +508,24 @@ OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 │ created_at               │
 │ updated_at               │
 └─────────────────────────┘
+
+┌─────────────────────────┐
+│     penalties            │
+├─────────────────────────┤
+│ id           PK          │
+│ race_id      FK IDX      │──→ races.id (CASCADE)
+│ result_id    FK IDX      │──→ race_results.id (SET NULL), nullable
+│ team_id      FK IDX      │──→ teams.id (CASCADE)
+│ driver_id    FK IDX      │──→ drivers.id (SET NULL), nullable
+│ penalty_type ENUM        │ warning/time_penalty/points_deduction/disqualification/grid_penalty
+│ reason       VARCHAR(512)│
+│ points_deducted FLOAT    │ default 0.0
+│ time_penalty_seconds INT │ nullable
+│ lap_number   INT         │ nullable
+│ is_active    BOOL        │ default true
+│ created_at               │
+│ updated_at               │
+└─────────────────────────┘
 ```
 
 ### Conventions / Convencoes
@@ -521,7 +554,7 @@ frontend/src/
 │   ├── (dashboard)/     # Protected pages / Paginas protegidas
 │   │   ├── dashboard/
 │   │   ├── championships/  # List, detail, create, edit pages
-│   │   ├── races/          # Detail, edit pages (list/create under championships)
+│   │   ├── races/          # Detail, edit, penalties (list/create) pages
 │   │   ├── drivers/           # Drivers list page
 │   │   ├── notifications/  # Notifications list with filters and actions
 │   │   └── admin/          # Admin panel (users, roles, permissions)
@@ -563,7 +596,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (298) │  ← httpx AsyncClient against test app
+│ Integration (336) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API

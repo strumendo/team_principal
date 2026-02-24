@@ -53,6 +53,9 @@ class RaceResult(Base):
     driver: Mapped["Driver | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Driver", lazy="selectin"
     )
+    penalties: Mapped[list["Penalty"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Penalty", back_populates="result", lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<RaceResult(id={self.id}, race_id={self.race_id}, team_id={self.team_id}, position={self.position})>"

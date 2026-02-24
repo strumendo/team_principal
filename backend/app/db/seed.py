@@ -175,6 +175,10 @@ SYSTEM_PERMISSIONS = [
         "module": "notifications",
         "description": "Delete notifications / Excluir notificacoes",
     },
+    {"codename": "penalties:read", "module": "penalties", "description": "Read penalties / Ler penalidades"},
+    {"codename": "penalties:create", "module": "penalties", "description": "Create penalties / Criar penalidades"},
+    {"codename": "penalties:update", "module": "penalties", "description": "Update penalties / Atualizar penalidades"},
+    {"codename": "penalties:delete", "module": "penalties", "description": "Delete penalties / Excluir penalidades"},
 ]
 
 
@@ -223,6 +227,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "results:read",
         "drivers:read",
         "notifications:read",
+        "penalties:read",
     ],
 }
 

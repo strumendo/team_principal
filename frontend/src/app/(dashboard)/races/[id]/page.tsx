@@ -102,6 +102,12 @@ export default function RaceDetailPage() {
             Results / Resultados
           </Link>
           <Link
+            href={`/races/${id}/penalties`}
+            className="rounded bg-orange-600 px-4 py-2 text-white hover:bg-orange-700"
+          >
+            Penalties / Penalidades
+          </Link>
+          <Link
             href={`/races/${id}/edit`}
             className="rounded bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
           >

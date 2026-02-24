@@ -9,8 +9,9 @@ import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import type { RaceResult } from "@/types/result";
+import type { Penalty } from "@/types/penalty";
 import type { RaceDetail } from "@/types/race";
-import { racesApi, resultsApi } from "@/lib/api-client";
+import { racesApi, resultsApi, penaltiesApi } from "@/lib/api-client";
 
 export default function RaceResultsPage() {
   const { data: session } = useSession();
@@ -19,6 +20,7 @@ export default function RaceResultsPage() {
 
   const [race, setRace] = useState<RaceDetail | null>(null);
   const [results, setResults] = useState<RaceResult[]>([]);
+  const [penalties, setPenalties] = useState<Penalty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,9 +31,10 @@ export default function RaceResultsPage() {
 
     const fetchData = async () => {
       setLoading(true);
-      const [raceResult, resultsResult] = await Promise.all([
+      const [raceResult, resultsResult, penaltiesResult] = await Promise.all([
         racesApi.get(token, id),
         resultsApi.listByRace(token, id),
+        penaltiesApi.listByRace(token, id),
       ]);
 
       if (raceResult.error) {
@@ -39,6 +42,7 @@ export default function RaceResultsPage() {
       } else {
         setRace(raceResult.data || null);
         setResults(resultsResult.data || []);
+        setPenalties(penaltiesResult.data || []);
         setError(null);
       }
       setLoading(false);
@@ -93,6 +97,9 @@ export default function RaceResultsPage() {
                   Flags
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Penalties / Penalidades
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Notes / Notas
                 </th>
               </tr>
@@ -100,6 +107,7 @@ export default function RaceResultsPage() {
             <tbody className="divide-y divide-gray-200 bg-white">
               {results.map((result) => {
                 const team = race.teams.find((t) => t.id === result.team_id);
+                const resultPenalties = penalties.filter((p) => p.result_id === result.id);
                 return (
                   <tr
                     key={result.id}
@@ -140,6 +148,15 @@ export default function RaceResultsPage() {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {resultPenalties.length > 0 ? (
+                        <span className="inline-flex rounded-full bg-orange-100 px-2 text-xs font-semibold leading-5 text-orange-800">
+                          {resultPenalties.length}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {result.notes || "—"}
