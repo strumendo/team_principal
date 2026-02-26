@@ -524,3 +524,19 @@ export const adminPermissionsApi = {
     return apiRequest<AdminPermission[]>(`/permissions/${qs ? `?${qs}` : ""}`, {}, token);
   },
 };
+
+/**
+ * Calendar API calls / Chamadas da API do calendario.
+ */
+import type { CalendarRace } from "@/types/calendar";
+
+export const calendarApi = {
+  listRaces: (token: string, params?: { year?: number; month?: number; championship_id?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.year) query.set("year", String(params.year));
+    if (params?.month) query.set("month", String(params.month));
+    if (params?.championship_id) query.set("championship_id", params.championship_id);
+    const qs = query.toString();
+    return apiRequest<CalendarRace[]>(`/calendar/races${qs ? `?${qs}` : ""}`, {}, token);
+  },
+};

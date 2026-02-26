@@ -42,10 +42,10 @@ export default function DashboardLayout({
             </li>
             <li>
               <a
-                href="/standings"
+                href="/calendar"
                 className="block rounded px-3 py-2 hover:bg-gray-800"
               >
-                Standings / Classificacao
+                Calendar / Calendario
               </a>
             </li>
           </ul>
