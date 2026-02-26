@@ -126,6 +126,11 @@ backend/
 │   │   ├── storage.py       # Local filesystem save/delete functions
 │   │   └── schemas.py       # UploadResponse schema
 │   │
+│   ├── calendar/             # Calendar module / Modulo de calendario
+│   │   ├── router.py        # GET /calendar/races (season calendar view)
+│   │   ├── service.py       # Date-range queries across championships
+│   │   └── schemas.py       # CalendarRaceResponse schema
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
@@ -150,6 +155,7 @@ backend/
 │   ├── test_dashboard.py            # 13 tests
 │   ├── test_notifications.py        # 25 tests
 │   ├── test_uploads.py              # 14 tests
+│   ├── test_calendar.py             # 12 tests
 │   └── test_health.py               # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -221,6 +227,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `dashboard_router` | `/api/v1/dashboard` | `app/dashboard/router.py` |
 | `notifications_router` | `/api/v1/notifications` | `app/notifications/router.py` |
 | `uploads_router` | `/api/v1/uploads` | `app/uploads/router.py` |
+| `calendar_router` | `/api/v1/calendar` | `app/calendar/router.py` |
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -295,6 +302,7 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | POST | `/api/v1/uploads/users/{id}/avatar` | Own user OR `users:update` | uploads |
 | POST | `/api/v1/uploads/teams/{id}/logo` | `teams:update` | uploads |
 | POST | `/api/v1/uploads/drivers/{id}/photo` | `drivers:update` | uploads |
+| GET | `/api/v1/calendar/races` | `races:read` | calendar |
 
 ---
 
@@ -523,11 +531,13 @@ frontend/src/
 │   │   ├── championships/  # List, detail, create, edit pages
 │   │   ├── races/          # Detail, edit pages (list/create under championships)
 │   │   ├── drivers/           # Drivers list page
+│   │   ├── calendar/         # Season calendar with monthly grid view
 │   │   ├── notifications/  # Notifications list with filters and actions
 │   │   └── admin/          # Admin panel (users, roles, permissions)
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
 │   ├── ImageUpload.tsx  # Reusable image upload with preview / Upload de imagem reutilizavel com preview
+│   ├── calendar/        # CalendarGrid, CalendarDayCell, CalendarRaceEvent
 │   ├── ui/              # Reusable UI components / Componentes UI reutilizaveis
 │   ├── auth/            # Auth-specific components
 │   └── layout/          # Layout components
@@ -563,7 +573,7 @@ frontend/src/
 
 ```
 ┌───────────────────┐
-│ Integration (298) │  ← httpx AsyncClient against test app
+│ Integration (310) │  ← httpx AsyncClient against test app
 │  (API-level)      │    Tests full request/response cycle
 ├───────────────────┤
 │  Unit (implicit)  │  ← Service functions tested via API
