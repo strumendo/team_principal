@@ -18,6 +18,7 @@ from app.results.schemas import (
     RaceResultListResponse,
     RaceResultResponse,
     RaceResultUpdateRequest,
+    StandingsBreakdownResponse,
 )
 from app.results.service import (
     create_result,
@@ -25,6 +26,7 @@ from app.results.service import (
     get_championship_standings,
     get_driver_championship_standings,
     get_result_by_id,
+    get_standings_breakdown,
     list_race_results,
     update_result,
 )
@@ -138,6 +140,22 @@ async def read_driver_championship_standings(
     Obtem classificacao de pilotos no campeonato agregada dos resultados de corrida.
     """
     return await get_driver_championship_standings(db, championship_id)
+
+
+@router.get(
+    "/api/v1/championships/{championship_id}/standings/breakdown",
+    response_model=StandingsBreakdownResponse,
+)
+async def read_standings_breakdown(
+    championship_id: uuid.UUID,
+    _current_user: User = Depends(require_permissions("results:read")),
+    db: AsyncSession = Depends(get_db),
+) -> dict:  # type: ignore[type-arg]
+    """
+    Get full standings breakdown with per-race points for teams and drivers.
+    Obtem detalhamento completo de classificacao com pontos por corrida para equipes e pilotos.
+    """
+    return await get_standings_breakdown(db, championship_id)
 
 
 @router.delete("/api/v1/results/{result_id}", status_code=204)
