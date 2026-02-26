@@ -48,3 +48,49 @@ export interface ChampionshipStanding {
   races_scored: number;
   wins: number;
 }
+
+// Standings breakdown interfaces / Interfaces de detalhamento de classificacao
+
+export interface BreakdownRace {
+  race_id: string;
+  race_name: string;
+  race_display_name: string;
+  round_number: number;
+}
+
+export interface RacePoints {
+  race_id: string;
+  points: number;
+  position: number;
+  dsq: boolean;
+}
+
+export interface TeamBreakdown {
+  position: number;
+  team_id: string;
+  team_name: string;
+  team_display_name: string;
+  total_points: number;
+  wins: number;
+  race_points: RacePoints[];
+}
+
+export interface DriverBreakdown {
+  position: number;
+  driver_id: string;
+  driver_name: string;
+  driver_display_name: string;
+  driver_abbreviation: string;
+  team_id: string;
+  team_name: string;
+  team_display_name: string;
+  total_points: number;
+  wins: number;
+  race_points: RacePoints[];
+}
+
+export interface StandingsBreakdown {
+  races: BreakdownRace[];
+  team_standings: TeamBreakdown[];
+  driver_standings: DriverBreakdown[];
+}

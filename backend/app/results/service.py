@@ -6,6 +6,8 @@ Logica de negocios de resultados de corrida.
 import uuid
 from typing import Any
 
+from collections import defaultdict
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -354,3 +356,151 @@ async def get_driver_championship_standings(db: AsyncSession, championship_id: u
         )
 
     return standings
+
+
+async def get_standings_breakdown(db: AsyncSession, championship_id: uuid.UUID) -> dict[str, Any]:
+    """
+    Compute full standings breakdown with per-race points for teams and drivers.
+    Aggregation done in Python for SQLite test compatibility.
+
+    Calcula detalhamento completo de classificacao com pontos por corrida para equipes e pilotos.
+    Agregacao feita em Python para compatibilidade com SQLite nos testes.
+    """
+    # Validate championship exists / Valida que o campeonato existe
+    champ_query = await db.execute(select(Championship).where(Championship.id == championship_id))
+    if champ_query.scalar_one_or_none() is None:
+        raise NotFoundException("Championship not found")
+
+    # Fetch finished races ordered by round_number / Busca corridas finalizadas ordenadas por round_number
+    races_stmt = (
+        select(Race)
+        .where(Race.championship_id == championship_id, Race.status == RaceStatus.finished)
+        .order_by(Race.round_number)
+    )
+    races_result = await db.execute(races_stmt)
+    races = list(races_result.scalars().all())
+
+    race_ids = [r.id for r in races]
+
+    # Build breakdown races list / Constroi lista de corridas para o breakdown
+    breakdown_races = [
+        {
+            "race_id": r.id,
+            "race_name": r.name,
+            "race_display_name": r.display_name,
+            "round_number": r.round_number,
+        }
+        for r in races
+    ]
+
+    if not race_ids:
+        return {
+            "races": [],
+            "team_standings": [],
+            "driver_standings": [],
+        }
+
+    # Fetch all non-DSQ results for these races / Busca todos os resultados nao-DSQ dessas corridas
+    results_stmt = (
+        select(RaceResult)
+        .where(RaceResult.race_id.in_(race_ids))
+    )
+    results_result = await db.execute(results_stmt)
+    all_results = list(results_result.scalars().all())
+
+    # --- Team breakdown / Detalhamento por equipe ---
+    team_data: dict[uuid.UUID, dict[str, Any]] = {}
+    team_race_points: dict[uuid.UUID, list[dict[str, Any]]] = defaultdict(list)
+
+    for result in all_results:
+        tid = result.team_id
+        if tid not in team_data:
+            team_data[tid] = {
+                "team_id": tid,
+                "team_name": result.team.name,
+                "team_display_name": result.team.display_name,
+                "total_points": 0.0,
+                "wins": 0,
+            }
+
+        rp = {
+            "race_id": result.race_id,
+            "points": float(result.points) if not result.dsq else 0.0,
+            "position": result.position,
+            "dsq": result.dsq,
+        }
+        team_race_points[tid].append(rp)
+
+        if not result.dsq:
+            team_data[tid]["total_points"] += float(result.points)
+            if result.position == 1:
+                team_data[tid]["wins"] += 1
+
+    # Sort teams by total_points desc / Ordena equipes por total_points desc
+    sorted_teams = sorted(team_data.values(), key=lambda t: t["total_points"], reverse=True)
+    team_standings = []
+    for idx, td in enumerate(sorted_teams, start=1):
+        tid = td["team_id"]
+        team_standings.append(
+            {
+                "position": idx,
+                **td,
+                "race_points": team_race_points[tid],
+            }
+        )
+
+    # --- Driver breakdown / Detalhamento por piloto ---
+    driver_data: dict[uuid.UUID, dict[str, Any]] = {}
+    driver_race_points: dict[uuid.UUID, list[dict[str, Any]]] = defaultdict(list)
+
+    for result in all_results:
+        if result.driver_id is None:
+            continue
+
+        did = result.driver_id
+        if did not in driver_data:
+            driver = result.driver
+            team = result.team
+            driver_data[did] = {
+                "driver_id": did,
+                "driver_name": driver.name,
+                "driver_display_name": driver.display_name,
+                "driver_abbreviation": driver.abbreviation,
+                "team_id": team.id,
+                "team_name": team.name,
+                "team_display_name": team.display_name,
+                "total_points": 0.0,
+                "wins": 0,
+            }
+
+        rp = {
+            "race_id": result.race_id,
+            "points": float(result.points) if not result.dsq else 0.0,
+            "position": result.position,
+            "dsq": result.dsq,
+        }
+        driver_race_points[did].append(rp)
+
+        if not result.dsq:
+            driver_data[did]["total_points"] += float(result.points)
+            if result.position == 1:
+                driver_data[did]["wins"] += 1
+
+    # Sort drivers by total_points desc / Ordena pilotos por total_points desc
+    sorted_drivers = sorted(driver_data.values(), key=lambda d: d["total_points"], reverse=True)
+    driver_standings = []
+    for idx, dd in enumerate(sorted_drivers, start=1):
+        did = dd["driver_id"]
+        driver_standings.append(
+            {
+                "position": idx,
+                **dd,
+                "race_points": driver_race_points[did],
+            }
+        )
+
+    return {
+        "races": breakdown_races,
+        "team_standings": team_standings,
+        "driver_standings": driver_standings,
+    }

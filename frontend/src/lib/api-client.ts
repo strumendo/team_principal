@@ -97,7 +97,7 @@ import type {
   ChampionshipEntry,
 } from "@/types/championship";
 
-import type { ChampionshipStanding } from "@/types/result";
+import type { ChampionshipStanding, StandingsBreakdown } from "@/types/result";
 import type { DriverStanding } from "@/types/driver";
 
 export const championshipsApi = {
@@ -170,6 +170,9 @@ export const championshipsApi = {
 
   getDriverStandings: (token: string, id: string) =>
     apiRequest<DriverStanding[]>(`/championships/${id}/driver-standings`, {}, token),
+
+  getStandingsBreakdown: (token: string, id: string) =>
+    apiRequest<StandingsBreakdown>(`/championships/${id}/standings/breakdown`, {}, token),
 };
 
 /**

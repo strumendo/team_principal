@@ -151,3 +151,60 @@ class DriverStandingResponse(BaseModel):
     wins: int
 
     model_config = {"from_attributes": True}
+
+
+# Standings breakdown schemas / Schemas de detalhamento de classificacao
+
+
+class BreakdownRace(BaseModel):
+    """Race column in breakdown matrix / Coluna de corrida na matriz de detalhamento."""
+
+    race_id: uuid.UUID
+    race_name: str
+    race_display_name: str
+    round_number: int
+
+
+class RacePoints(BaseModel):
+    """Points scored in a single race / Pontos marcados em uma corrida."""
+
+    race_id: uuid.UUID
+    points: float
+    position: int
+    dsq: bool
+
+
+class TeamBreakdown(BaseModel):
+    """Team standings row with per-race points / Linha de classificacao de equipe com pontos por corrida."""
+
+    position: int
+    team_id: uuid.UUID
+    team_name: str
+    team_display_name: str
+    total_points: float
+    wins: int
+    race_points: list[RacePoints]
+
+
+class DriverBreakdown(BaseModel):
+    """Driver standings row with per-race points / Linha de classificacao de piloto com pontos por corrida."""
+
+    position: int
+    driver_id: uuid.UUID
+    driver_name: str
+    driver_display_name: str
+    driver_abbreviation: str
+    team_id: uuid.UUID
+    team_name: str
+    team_display_name: str
+    total_points: float
+    wins: int
+    race_points: list[RacePoints]
+
+
+class StandingsBreakdownResponse(BaseModel):
+    """Full standings breakdown response / Resposta completa de detalhamento de classificacao."""
+
+    races: list[BreakdownRace]
+    team_standings: list[TeamBreakdown]
+    driver_standings: list[DriverBreakdown]

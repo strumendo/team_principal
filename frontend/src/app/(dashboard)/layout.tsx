@@ -40,6 +40,14 @@ export default function DashboardLayout({
                 Drivers / Pilotos
               </a>
             </li>
+            <li>
+              <a
+                href="/standings"
+                className="block rounded px-3 py-2 hover:bg-gray-800"
+              >
+                Standings / Classificacao
+              </a>
+            </li>
           </ul>
           {/* Admin section / Secao admin */}
           <div className="mt-6 border-t border-gray-700 pt-4">
