@@ -45,9 +45,17 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-bold text-gray-900">
-        Users / Usuarios
-      </h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Users / Usuarios
+        </h1>
+        <Link
+          href="/admin/users/create"
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Create User / Criar Usuario
+        </Link>
+      </div>
 
       {/* Filters / Filtros */}
       <div className="mb-6 flex gap-4">

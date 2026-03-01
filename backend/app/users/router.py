@@ -12,8 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_current_active_user, require_permissions
 from app.db.session import get_db
 from app.users.models import User
-from app.users.schemas import AdminUserUpdate, UserListResponse, UserResponse, UserUpdate
-from app.users.service import admin_update_user, get_user_by_id, list_users, update_user
+from app.users.schemas import AdminUserCreateRequest, AdminUserUpdate, UserListResponse, UserResponse, UserUpdate
+from app.users.service import admin_create_user, admin_update_user, get_user_by_id, list_users, update_user
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -54,6 +54,25 @@ async def list_all_users(
     Lista todos os usuarios (requer permissao users:list).
     """
     return await list_users(db, is_active=is_active, search=search)
+
+
+@router.post("/", response_model=UserResponse, status_code=201)
+async def create_user(
+    body: AdminUserCreateRequest,
+    _current_user: User = Depends(require_permissions("users:create")),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    Create a new user (requires users:create permission).
+    Cria um novo usuario (requer permissao users:create).
+    """
+    return await admin_create_user(
+        db,
+        email=body.email,
+        password=body.password,
+        full_name=body.full_name,
+        is_active=body.is_active,
+    )
 
 
 @router.get("/{user_id}", response_model=UserResponse)

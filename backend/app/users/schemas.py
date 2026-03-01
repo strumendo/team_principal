@@ -46,6 +46,15 @@ class UserUpdate(BaseModel):
     avatar_url: str | None = None
 
 
+class AdminUserCreateRequest(BaseModel):
+    """Admin user create request body / Corpo da requisicao de criacao de usuario pelo admin."""
+
+    email: EmailStr
+    password: str
+    full_name: str
+    is_active: bool = True
+
+
 class AdminUserUpdate(BaseModel):
     """Admin user update request body / Corpo da requisicao de atualizacao de usuario pelo admin."""
 
