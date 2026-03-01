@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import type { DriverListItem } from "@/types/driver";
 import { driversApi } from "@/lib/api-client";
 
@@ -115,9 +116,12 @@ export default function DriversPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">
+                    <Link
+                      href={`/drivers/${driver.id}`}
+                      className="font-medium text-blue-600 hover:underline"
+                    >
                       {driver.display_name}
-                    </span>
+                    </Link>
                     <p className="text-sm text-gray-500">{driver.name}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
