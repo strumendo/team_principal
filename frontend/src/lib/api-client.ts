@@ -444,6 +444,12 @@ import type {
 } from "@/types/admin";
 
 export const adminUsersApi = {
+  create: (token: string, data: { email: string; password: string; full_name: string; is_active?: boolean }) =>
+    apiRequest<AdminUser>("/users/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
   list: (token: string, params?: { is_active?: boolean; search?: string }) => {
     const query = new URLSearchParams();
     if (params?.is_active !== undefined) query.set("is_active", String(params.is_active));

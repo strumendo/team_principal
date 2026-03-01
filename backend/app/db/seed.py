@@ -66,6 +66,7 @@ SYSTEM_PERMISSIONS = [
         "description": "Update own profile / Atualizar perfil proprio",
     },
     {"codename": "users:list", "module": "users", "description": "List all users / Listar todos os usuarios"},
+    {"codename": "users:create", "module": "users", "description": "Create users / Criar usuarios"},
     {"codename": "users:delete", "module": "users", "description": "Delete users / Excluir usuarios"},
     {"codename": "roles:read", "module": "roles", "description": "Read roles / Ler papeis"},
     {"codename": "roles:create", "module": "roles", "description": "Create roles / Criar papeis"},

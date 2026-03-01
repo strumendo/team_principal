@@ -120,6 +120,7 @@ async def admin_user(db_session: AsyncSession) -> User:
         ("roles:revoke", "roles"),
         ("users:read", "users"),
         ("users:list", "users"),
+        ("users:create", "users"),
         ("users:update", "users"),
         ("teams:read", "teams"),
         ("teams:create", "teams"),

@@ -11,6 +11,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictException, NotFoundException
+from app.core.security import hash_password
 from app.users.models import User
 
 
@@ -64,6 +65,33 @@ async def list_users(
         )
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+async def admin_create_user(
+    db: AsyncSession,
+    email: str,
+    password: str,
+    full_name: str,
+    is_active: bool = True,
+) -> User:
+    """
+    Create a new user as admin. Checks email uniqueness.
+    Cria um novo usuario como admin. Verifica unicidade do email.
+    """
+    existing = await db.execute(select(User).where(User.email == email))
+    if existing.scalar_one_or_none() is not None:
+        raise ConflictException("Email already in use")
+
+    user = User(
+        email=email,
+        hashed_password=hash_password(password),
+        full_name=full_name,
+        is_active=is_active,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 async def admin_update_user(
