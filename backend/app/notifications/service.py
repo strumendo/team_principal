@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.notifications.models import Notification
+from app.notifications.websocket import manager
 
 
 async def list_notifications(
@@ -123,6 +124,19 @@ async def create_notification(
     db.add(notification)
     await db.commit()
     await db.refresh(notification)
+
+    # Broadcast via WebSocket / Enviar via WebSocket
+    await manager.send_to_user(user_id, {
+        "type": "new_notification",
+        "notification": {
+            "id": str(notification.id),
+            "type": notification.type,
+            "title": notification.title,
+            "message": notification.message,
+            "created_at": notification.created_at.isoformat(),
+        },
+    })
+
     return notification
 
 
@@ -154,6 +168,20 @@ async def create_broadcast_notifications(
     await db.commit()
     for n in notifications:
         await db.refresh(n)
+
+    # Broadcast via WebSocket / Enviar via WebSocket
+    for n in notifications:
+        await manager.send_to_user(n.user_id, {
+            "type": "new_notification",
+            "notification": {
+                "id": str(n.id),
+                "type": n.type,
+                "title": n.title,
+                "message": n.message,
+                "created_at": n.created_at.isoformat(),
+            },
+        })
+
     return notifications
 
 

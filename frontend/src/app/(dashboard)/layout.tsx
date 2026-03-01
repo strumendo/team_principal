@@ -3,6 +3,7 @@
  * Layout do dashboard com sidebar.
  */
 import NotificationBadge from "@/components/layout/NotificationBadge";
+import NotificationToast from "@/components/layout/NotificationToast";
 
 export default function DashboardLayout({
   children,
@@ -48,6 +49,15 @@ export default function DashboardLayout({
                 Calendar / Calendario
               </a>
             </li>
+            <li>
+              <a
+                href="/notifications"
+                className="flex items-center rounded px-3 py-2 hover:bg-gray-800"
+              >
+                Notifications / Notificacoes
+                <NotificationBadge />
+              </a>
+            </li>
           </ul>
           {/* Admin section / Secao admin */}
           <div className="mt-6 border-t border-gray-700 pt-4">
@@ -85,6 +95,7 @@ export default function DashboardLayout({
       </aside>
       {/* Main content / Conteudo principal */}
       <main className="flex-1 p-8">{children}</main>
+      <NotificationToast />
     </div>
   );
 }
