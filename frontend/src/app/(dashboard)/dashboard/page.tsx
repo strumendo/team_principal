@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { DashboardSummary } from "@/types/dashboard";
 import { dashboardApi } from "@/lib/api-client";
+import StandingsChart from "@/components/dashboard/StandingsChart";
+import RaceDistributionChart from "@/components/dashboard/RaceDistributionChart";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -242,6 +244,23 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      {/* Charts / Graficos */}
+      {(summary.championship_standings.length > 0 || summary.next_races.length > 0) && (
+        <section className="mt-8">
+          <h2 className="mb-4 text-xl font-semibold text-gray-800">
+            Charts / Graficos
+          </h2>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {summary.championship_standings.length > 0 && (
+              <StandingsChart standings={summary.championship_standings} />
+            )}
+            {summary.next_races.length > 0 && (
+              <RaceDistributionChart races={summary.next_races} />
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
