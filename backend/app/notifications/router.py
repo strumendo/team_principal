@@ -5,10 +5,13 @@ Router da API de notificacoes.
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Response, WebSocket, WebSocketDisconnect
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_active_user, require_permissions
+from app.core.security import decode_token
+from app.db.session import async_session as get_async_session
 from app.db.session import get_db
 from app.notifications.schemas import (
     NotificationCreateRequest,
@@ -26,9 +29,51 @@ from app.notifications.service import (
     mark_all_as_read,
     mark_as_read,
 )
+from app.notifications.websocket import manager
 from app.users.models import User
 
 router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
+
+
+@router.websocket("/ws")
+async def websocket_notifications(websocket: WebSocket, token: str = "") -> None:
+    """
+    WebSocket endpoint for real-time notifications.
+    Endpoint WebSocket para notificacoes em tempo real.
+
+    Connect with: ws://host/api/v1/notifications/ws?token=<jwt>
+    """
+    if not token:
+        await websocket.close(code=4001, reason="Missing token")
+        return
+
+    payload = decode_token(token)
+    if payload is None:
+        await websocket.close(code=4001, reason="Invalid token")
+        return
+
+    user_id_str = payload.get("sub")
+    if not user_id_str or not isinstance(user_id_str, str):
+        await websocket.close(code=4001, reason="Invalid token payload")
+        return
+
+    user_id = uuid.UUID(user_id_str)
+
+    # Verify user exists and is active / Verificar se usuario existe e esta ativo
+    async with get_async_session() as db:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if user is None or not user.is_active:
+            await websocket.close(code=4003, reason="User not found or inactive")
+            return
+
+    await manager.connect(user_id, websocket)
+    try:
+        while True:
+            # Keep connection alive / Manter conexao ativa
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(user_id, websocket)
 
 
 @router.get("/", response_model=list[NotificationListResponse])
