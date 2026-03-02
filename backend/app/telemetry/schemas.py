@@ -8,7 +8,6 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-
 # --- Lap Time schemas / Schemas de tempo de volta ---
 
 

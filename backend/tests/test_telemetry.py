@@ -18,7 +18,6 @@ from app.teams.models import Team
 from app.telemetry.models import CarSetup, LapTime
 from app.users.models import User
 
-
 # --- Fixtures / Fixtures ---
 
 

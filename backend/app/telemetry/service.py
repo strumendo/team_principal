@@ -14,7 +14,6 @@ from app.races.models import Race
 from app.teams.models import Team
 from app.telemetry.models import CarSetup, LapTime
 
-
 # --- Helpers / Auxiliares ---
 
 

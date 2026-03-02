@@ -241,7 +241,9 @@ async def delete_existing_setup(
 @router.get("/api/v1/races/{race_id}/telemetry/compare", response_model=list[DriverComparison])
 async def compare_race_drivers(
     race_id: uuid.UUID,
-    driver_ids: str = Query(description="Comma-separated driver UUIDs (max 3) / UUIDs de pilotos separados por virgula"),
+    driver_ids: str = Query(
+        description="Comma-separated driver UUIDs (max 3) / UUIDs separados por virgula"
+    ),
     _current_user: User = Depends(require_permissions("telemetry:read")),
     db: AsyncSession = Depends(get_db),
 ) -> list[DriverComparison]:
