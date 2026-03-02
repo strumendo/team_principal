@@ -14,8 +14,8 @@ from app.core.security import create_access_token, hash_password
 from app.db.base import Base
 from app.db.session import get_db
 from app.drivers.models import Driver  # noqa: F401
-from app.notifications.models import Notification  # noqa: F401
 from app.main import create_app
+from app.notifications.models import Notification  # noqa: F401
 from app.races.models import Race, race_entries  # noqa: F401
 from app.results.models import RaceResult  # noqa: F401
 from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
