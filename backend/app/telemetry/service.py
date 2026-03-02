@@ -132,7 +132,7 @@ async def create_lap_time(
 async def bulk_create_lap_times(
     db: AsyncSession,
     race_id: uuid.UUID,
-    laps: list[dict],
+    laps: list[dict[str, object]],
 ) -> list[LapTime]:
     """
     Bulk create lap times for a race. Validates race exists.
@@ -172,7 +172,7 @@ async def delete_lap_time(db: AsyncSession, lap: LapTime) -> None:
     await db.commit()
 
 
-async def get_lap_summary(db: AsyncSession, race_id: uuid.UUID) -> dict:
+async def get_lap_summary(db: AsyncSession, race_id: uuid.UUID) -> dict[str, object]:
     """
     Get lap time summary for a race: fastest/avg per driver, overall fastest.
     Retorna resumo de tempos de volta: mais rapido/media por piloto, mais rapido geral.
@@ -386,7 +386,7 @@ async def compare_drivers(
     db: AsyncSession,
     race_id: uuid.UUID,
     driver_ids: list[uuid.UUID],
-) -> list[dict]:
+) -> list[dict[str, object]]:
     """
     Compare lap times for up to 3 drivers in a race.
     Compara tempos de volta de ate 3 pilotos em uma corrida.

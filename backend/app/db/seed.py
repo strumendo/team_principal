@@ -196,6 +196,46 @@ SYSTEM_PERMISSIONS = [
         "module": "telemetry",
         "description": "Delete telemetry data / Excluir dados de telemetria",
     },
+    {
+        "codename": "pitstops:read",
+        "module": "pitstops",
+        "description": "Read pit stop data / Ler dados de pit stop",
+    },
+    {
+        "codename": "pitstops:create",
+        "module": "pitstops",
+        "description": "Create pit stop data / Criar dados de pit stop",
+    },
+    {
+        "codename": "pitstops:update",
+        "module": "pitstops",
+        "description": "Update pit stop data / Atualizar dados de pit stop",
+    },
+    {
+        "codename": "pitstops:delete",
+        "module": "pitstops",
+        "description": "Delete pit stop data / Excluir dados de pit stop",
+    },
+    {
+        "codename": "strategies:read",
+        "module": "strategies",
+        "description": "Read race strategies / Ler estrategias de corrida",
+    },
+    {
+        "codename": "strategies:create",
+        "module": "strategies",
+        "description": "Create race strategies / Criar estrategias de corrida",
+    },
+    {
+        "codename": "strategies:update",
+        "module": "strategies",
+        "description": "Update race strategies / Atualizar estrategias de corrida",
+    },
+    {
+        "codename": "strategies:delete",
+        "module": "strategies",
+        "description": "Delete race strategies / Excluir estrategias de corrida",
+    },
 ]
 
 
@@ -245,6 +285,8 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "drivers:read",
         "notifications:read",
         "telemetry:read",
+        "pitstops:read",
+        "strategies:read",
     ],
 }
 
