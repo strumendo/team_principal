@@ -176,6 +176,26 @@ SYSTEM_PERMISSIONS = [
         "module": "notifications",
         "description": "Delete notifications / Excluir notificacoes",
     },
+    {
+        "codename": "telemetry:read",
+        "module": "telemetry",
+        "description": "Read telemetry data / Ler dados de telemetria",
+    },
+    {
+        "codename": "telemetry:create",
+        "module": "telemetry",
+        "description": "Create telemetry data / Criar dados de telemetria",
+    },
+    {
+        "codename": "telemetry:update",
+        "module": "telemetry",
+        "description": "Update telemetry data / Atualizar dados de telemetria",
+    },
+    {
+        "codename": "telemetry:delete",
+        "module": "telemetry",
+        "description": "Delete telemetry data / Excluir dados de telemetria",
+    },
 ]
 
 
@@ -224,6 +244,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "results:read",
         "drivers:read",
         "notifications:read",
+        "telemetry:read",
     ],
 }
 

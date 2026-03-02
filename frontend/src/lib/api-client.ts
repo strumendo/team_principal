@@ -546,3 +546,140 @@ export const calendarApi = {
     return apiRequest<CalendarRace[]>(`/calendar/races${qs ? `?${qs}` : ""}`, {}, token);
   },
 };
+
+/**
+ * Telemetry API calls / Chamadas da API de telemetria.
+ */
+import type {
+  LapTime,
+  LapTimeSummary,
+  CarSetup,
+  CarSetupDetail,
+  DriverComparison,
+} from "@/types/telemetry";
+
+export const telemetryApi = {
+  listLaps: (token: string, raceId: string, params?: { driver_id?: string; team_id?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.driver_id) query.set("driver_id", params.driver_id);
+    if (params?.team_id) query.set("team_id", params.team_id);
+    const qs = query.toString();
+    return apiRequest<LapTime[]>(`/races/${raceId}/laps${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  createLap: (
+    token: string,
+    raceId: string,
+    data: {
+      driver_id: string;
+      team_id: string;
+      lap_number: number;
+      lap_time_ms: number;
+      sector_1_ms?: number;
+      sector_2_ms?: number;
+      sector_3_ms?: number;
+      is_valid?: boolean;
+      is_personal_best?: boolean;
+    },
+  ) =>
+    apiRequest<LapTime>(`/races/${raceId}/laps`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  bulkCreateLaps: (
+    token: string,
+    raceId: string,
+    laps: Array<{
+      driver_id: string;
+      team_id: string;
+      lap_number: number;
+      lap_time_ms: number;
+      sector_1_ms?: number;
+      sector_2_ms?: number;
+      sector_3_ms?: number;
+      is_valid?: boolean;
+      is_personal_best?: boolean;
+    }>,
+  ) =>
+    apiRequest<LapTime[]>(`/races/${raceId}/laps/bulk`, {
+      method: "POST",
+      body: JSON.stringify({ laps }),
+    }, token),
+
+  getLapSummary: (token: string, raceId: string) =>
+    apiRequest<LapTimeSummary>(`/races/${raceId}/laps/summary`, {}, token),
+
+  deleteLap: (token: string, lapId: string) =>
+    apiRequest<void>(`/laps/${lapId}`, { method: "DELETE" }, token),
+
+  listSetups: (token: string, raceId: string, params?: { driver_id?: string; team_id?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.driver_id) query.set("driver_id", params.driver_id);
+    if (params?.team_id) query.set("team_id", params.team_id);
+    const qs = query.toString();
+    return apiRequest<CarSetup[]>(`/races/${raceId}/setups${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  createSetup: (
+    token: string,
+    raceId: string,
+    data: {
+      driver_id: string;
+      team_id: string;
+      name: string;
+      notes?: string;
+      front_wing?: number;
+      rear_wing?: number;
+      differential?: number;
+      brake_bias?: number;
+      tire_pressure_fl?: number;
+      tire_pressure_fr?: number;
+      tire_pressure_rl?: number;
+      tire_pressure_rr?: number;
+      suspension_stiffness?: number;
+      anti_roll_bar?: number;
+    },
+  ) =>
+    apiRequest<CarSetup>(`/races/${raceId}/setups`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  getSetup: (token: string, setupId: string) =>
+    apiRequest<CarSetupDetail>(`/setups/${setupId}`, {}, token),
+
+  updateSetup: (
+    token: string,
+    setupId: string,
+    data: {
+      name?: string;
+      notes?: string;
+      front_wing?: number;
+      rear_wing?: number;
+      differential?: number;
+      brake_bias?: number;
+      tire_pressure_fl?: number;
+      tire_pressure_fr?: number;
+      tire_pressure_rl?: number;
+      tire_pressure_rr?: number;
+      suspension_stiffness?: number;
+      anti_roll_bar?: number;
+      is_active?: boolean;
+    },
+  ) =>
+    apiRequest<CarSetup>(`/setups/${setupId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  deleteSetup: (token: string, setupId: string) =>
+    apiRequest<void>(`/setups/${setupId}`, { method: "DELETE" }, token),
+
+  compareDrivers: (token: string, raceId: string, driverIds: string[]) =>
+    apiRequest<DriverComparison[]>(
+      `/races/${raceId}/telemetry/compare?driver_ids=${driverIds.join(",")}`,
+      {},
+      token,
+    ),
+};

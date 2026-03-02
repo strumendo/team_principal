@@ -18,6 +18,7 @@ from app.users.models import User  # noqa: F401
 from app.roles.models import Role, Permission, role_permissions, user_roles  # noqa: F401
 from app.teams.models import Team  # noqa: F401
 from app.notifications.models import Notification  # noqa: F401
+from app.telemetry.models import CarSetup, LapTime  # noqa: F401
 
 config = context.config
 

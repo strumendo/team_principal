@@ -20,6 +20,7 @@ from app.races.models import Race, race_entries  # noqa: F401
 from app.results.models import RaceResult  # noqa: F401
 from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
 from app.teams.models import Team  # noqa: F401
+from app.telemetry.models import CarSetup, LapTime  # noqa: F401
 from app.users.models import User  # noqa: F401
 
 # Use in-memory SQLite for tests / Usa SQLite em memoria para testes
@@ -148,6 +149,10 @@ async def admin_user(db_session: AsyncSession) -> User:
         ("notifications:read", "notifications"),
         ("notifications:create", "notifications"),
         ("notifications:delete", "notifications"),
+        ("telemetry:read", "telemetry"),
+        ("telemetry:create", "telemetry"),
+        ("telemetry:update", "telemetry"),
+        ("telemetry:delete", "telemetry"),
     ]:
         perm = Permission(codename=codename, module=module)
         db_session.add(perm)
