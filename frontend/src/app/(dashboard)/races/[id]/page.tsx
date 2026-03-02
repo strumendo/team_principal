@@ -96,6 +96,18 @@ export default function RaceDetailPage() {
         </div>
         <div className="flex gap-2">
           <Link
+            href={`/races/${id}/telemetry`}
+            className="rounded bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"
+          >
+            Telemetry / Telemetria
+          </Link>
+          <Link
+            href={`/races/${id}/setups`}
+            className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+          >
+            Setups
+          </Link>
+          <Link
             href={`/races/${id}/results`}
             className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
           >

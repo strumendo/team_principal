@@ -8,16 +8,16 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-
 from app.config import settings
 from app.db.base import Base
+from app.notifications.models import Notification  # noqa: F401
+from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
+from app.teams.models import Team  # noqa: F401
+from app.telemetry.models import CarSetup, LapTime  # noqa: F401
 
 # Import all models so they are registered with Base.metadata
 # Importa todos os modelos para que sejam registrados no Base.metadata
 from app.users.models import User  # noqa: F401
-from app.roles.models import Role, Permission, role_permissions, user_roles  # noqa: F401
-from app.teams.models import Team  # noqa: F401
-from app.notifications.models import Notification  # noqa: F401
 
 config = context.config
 
