@@ -108,6 +108,12 @@ export default function RaceDetailPage() {
             Setups
           </Link>
           <Link
+            href={`/races/${id}/pitstops`}
+            className="rounded bg-orange-600 px-4 py-2 text-white hover:bg-orange-700"
+          >
+            Pit Stops
+          </Link>
+          <Link
             href={`/races/${id}/results`}
             className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
           >

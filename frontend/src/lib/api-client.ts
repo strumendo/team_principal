@@ -683,3 +683,121 @@ export const telemetryApi = {
       token,
     ),
 };
+
+/**
+ * Pit Stops API calls / Chamadas da API de pit stops.
+ */
+import type {
+  PitStop as PitStopType,
+  PitStopDetail,
+  PitStopSummary,
+  RaceStrategy,
+  RaceStrategyDetail,
+  TireCompound,
+} from "@/types/pitstops";
+
+export const pitstopsApi = {
+  list: (token: string, raceId: string, params?: { driver_id?: string; team_id?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.driver_id) query.set("driver_id", params.driver_id);
+    if (params?.team_id) query.set("team_id", params.team_id);
+    const qs = query.toString();
+    return apiRequest<PitStopType[]>(`/races/${raceId}/pitstops${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  create: (
+    token: string,
+    raceId: string,
+    data: {
+      driver_id: string;
+      team_id: string;
+      lap_number: number;
+      duration_ms: number;
+      tire_from?: TireCompound;
+      tire_to?: TireCompound;
+      notes?: string;
+    },
+  ) =>
+    apiRequest<PitStopType>(`/races/${raceId}/pitstops`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  getSummary: (token: string, raceId: string) =>
+    apiRequest<PitStopSummary>(`/races/${raceId}/pitstops/summary`, {}, token),
+
+  get: (token: string, pitStopId: string) =>
+    apiRequest<PitStopDetail>(`/pitstops/${pitStopId}`, {}, token),
+
+  update: (
+    token: string,
+    pitStopId: string,
+    data: {
+      duration_ms?: number;
+      tire_from?: TireCompound;
+      tire_to?: TireCompound;
+      notes?: string;
+    },
+  ) =>
+    apiRequest<PitStopType>(`/pitstops/${pitStopId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  delete: (token: string, pitStopId: string) =>
+    apiRequest<void>(`/pitstops/${pitStopId}`, { method: "DELETE" }, token),
+};
+
+/**
+ * Strategies API calls / Chamadas da API de estrategias.
+ */
+export const strategiesApi = {
+  list: (token: string, raceId: string, params?: { driver_id?: string; team_id?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.driver_id) query.set("driver_id", params.driver_id);
+    if (params?.team_id) query.set("team_id", params.team_id);
+    const qs = query.toString();
+    return apiRequest<RaceStrategy[]>(`/races/${raceId}/strategies${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  create: (
+    token: string,
+    raceId: string,
+    data: {
+      driver_id: string;
+      team_id: string;
+      name: string;
+      description?: string;
+      target_stops: number;
+      planned_laps?: string;
+      starting_compound?: TireCompound;
+    },
+  ) =>
+    apiRequest<RaceStrategy>(`/races/${raceId}/strategies`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  get: (token: string, strategyId: string) =>
+    apiRequest<RaceStrategyDetail>(`/strategies/${strategyId}`, {}, token),
+
+  update: (
+    token: string,
+    strategyId: string,
+    data: {
+      name?: string;
+      description?: string;
+      target_stops?: number;
+      planned_laps?: string;
+      starting_compound?: TireCompound;
+      is_active?: boolean;
+    },
+  ) =>
+    apiRequest<RaceStrategy>(`/strategies/${strategyId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  delete: (token: string, strategyId: string) =>
+    apiRequest<void>(`/strategies/${strategyId}`, { method: "DELETE" }, token),
+};
