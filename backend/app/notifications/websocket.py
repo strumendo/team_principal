@@ -37,7 +37,7 @@ class ConnectionManager:
         if not conns and user_id in self._connections:
             del self._connections[user_id]
 
-    async def send_to_user(self, user_id: uuid.UUID, data: dict) -> None:
+    async def send_to_user(self, user_id: uuid.UUID, data: dict[str, object]) -> None:
         """
         Send JSON data to all connections of a specific user.
         Envia dados JSON para todas as conexoes de um usuario especifico.

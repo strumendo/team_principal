@@ -458,13 +458,13 @@ async def get_standings_breakdown(db: AsyncSession, championship_id: uuid.UUID) 
 
         did = result.driver_id
         if did not in driver_data:
-            driver = result.driver
+            driver = result.driver  # guaranteed non-None when driver_id is not None
             team = result.team
             driver_data[did] = {
                 "driver_id": did,
-                "driver_name": driver.name,
-                "driver_display_name": driver.display_name,
-                "driver_abbreviation": driver.abbreviation,
+                "driver_name": driver.name if driver else "",
+                "driver_display_name": driver.display_name if driver else "",
+                "driver_abbreviation": driver.abbreviation if driver else "",
                 "team_id": team.id,
                 "team_name": team.name,
                 "team_display_name": team.display_name,

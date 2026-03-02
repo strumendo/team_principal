@@ -160,7 +160,7 @@ async def delete_pit_stop(db: AsyncSession, pit_stop: PitStop) -> None:
     await db.commit()
 
 
-async def get_pit_stop_summary(db: AsyncSession, race_id: uuid.UUID) -> dict:
+async def get_pit_stop_summary(db: AsyncSession, race_id: uuid.UUID) -> dict[str, list[dict[str, object]]]:
     """
     Get pit stop summary for a race: total stops, avg duration, fastest per driver.
     Retorna resumo de pit stops: total de paradas, duracao media, mais rapida por piloto.
