@@ -801,3 +801,140 @@ export const strategiesApi = {
   delete: (token: string, strategyId: string) =>
     apiRequest<void>(`/strategies/${strategyId}`, { method: "DELETE" }, token),
 };
+
+/**
+ * Race Replay API calls / Chamadas da API de replay de corrida.
+ */
+import type {
+  LapPosition as LapPositionType,
+  LapPositionDetail,
+  RaceEvent as RaceEventType,
+  RaceEventDetail,
+  FullReplayResponse,
+  StintAnalysisResponse,
+  OvertakesResponse,
+  RaceSummaryResponse,
+  RaceEventType as EventType,
+} from "@/types/race-replay";
+
+export const replayApi = {
+  listPositions: (token: string, raceId: string, params?: { driver_id?: string; team_id?: string; lap_number?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.driver_id) query.set("driver_id", params.driver_id);
+    if (params?.team_id) query.set("team_id", params.team_id);
+    if (params?.lap_number !== undefined) query.set("lap_number", String(params.lap_number));
+    const qs = query.toString();
+    return apiRequest<LapPositionType[]>(`/races/${raceId}/positions${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  createPosition: (
+    token: string,
+    raceId: string,
+    data: {
+      driver_id: string;
+      team_id: string;
+      lap_number: number;
+      position: number;
+      gap_to_leader_ms?: number;
+      interval_ms?: number;
+    },
+  ) =>
+    apiRequest<LapPositionType>(`/races/${raceId}/positions`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  bulkCreatePositions: (
+    token: string,
+    raceId: string,
+    positions: Array<{
+      driver_id: string;
+      team_id: string;
+      lap_number: number;
+      position: number;
+      gap_to_leader_ms?: number;
+      interval_ms?: number;
+    }>,
+  ) =>
+    apiRequest<LapPositionType[]>(`/races/${raceId}/positions/bulk`, {
+      method: "POST",
+      body: JSON.stringify({ positions }),
+    }, token),
+
+  getPosition: (token: string, positionId: string) =>
+    apiRequest<LapPositionDetail>(`/positions/${positionId}`, {}, token),
+
+  updatePosition: (
+    token: string,
+    positionId: string,
+    data: {
+      position?: number;
+      gap_to_leader_ms?: number;
+      interval_ms?: number;
+    },
+  ) =>
+    apiRequest<LapPositionType>(`/positions/${positionId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  deletePosition: (token: string, positionId: string) =>
+    apiRequest<void>(`/positions/${positionId}`, { method: "DELETE" }, token),
+
+  listEvents: (token: string, raceId: string, params?: { event_type?: EventType; driver_id?: string; lap_number?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.event_type) query.set("event_type", params.event_type);
+    if (params?.driver_id) query.set("driver_id", params.driver_id);
+    if (params?.lap_number !== undefined) query.set("lap_number", String(params.lap_number));
+    const qs = query.toString();
+    return apiRequest<RaceEventType[]>(`/races/${raceId}/events${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  createEvent: (
+    token: string,
+    raceId: string,
+    data: {
+      lap_number: number;
+      event_type: EventType;
+      description?: string;
+      driver_id?: string;
+    },
+  ) =>
+    apiRequest<RaceEventType>(`/races/${raceId}/events`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  getEvent: (token: string, eventId: string) =>
+    apiRequest<RaceEventDetail>(`/events/${eventId}`, {}, token),
+
+  updateEvent: (
+    token: string,
+    eventId: string,
+    data: {
+      lap_number?: number;
+      event_type?: EventType;
+      description?: string;
+      driver_id?: string;
+    },
+  ) =>
+    apiRequest<RaceEventType>(`/events/${eventId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  deleteEvent: (token: string, eventId: string) =>
+    apiRequest<void>(`/events/${eventId}`, { method: "DELETE" }, token),
+
+  getReplay: (token: string, raceId: string) =>
+    apiRequest<FullReplayResponse>(`/races/${raceId}/replay`, {}, token),
+
+  getStintAnalysis: (token: string, raceId: string) =>
+    apiRequest<StintAnalysisResponse>(`/races/${raceId}/analysis/stints`, {}, token),
+
+  getOvertakes: (token: string, raceId: string) =>
+    apiRequest<OvertakesResponse>(`/races/${raceId}/analysis/overtakes`, {}, token),
+
+  getRaceSummary: (token: string, raceId: string) =>
+    apiRequest<RaceSummaryResponse>(`/races/${raceId}/analysis/summary`, {}, token),
+};

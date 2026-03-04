@@ -236,6 +236,26 @@ SYSTEM_PERMISSIONS = [
         "module": "strategies",
         "description": "Delete race strategies / Excluir estrategias de corrida",
     },
+    {
+        "codename": "replay:read",
+        "module": "replay",
+        "description": "Read race replay data / Ler dados de replay de corrida",
+    },
+    {
+        "codename": "replay:create",
+        "module": "replay",
+        "description": "Create race replay data / Criar dados de replay de corrida",
+    },
+    {
+        "codename": "replay:update",
+        "module": "replay",
+        "description": "Update race replay data / Atualizar dados de replay de corrida",
+    },
+    {
+        "codename": "replay:delete",
+        "module": "replay",
+        "description": "Delete race replay data / Excluir dados de replay de corrida",
+    },
 ]
 
 
@@ -287,6 +307,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "telemetry:read",
         "pitstops:read",
         "strategies:read",
+        "replay:read",
     ],
 }
 

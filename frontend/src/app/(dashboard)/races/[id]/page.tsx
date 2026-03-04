@@ -114,6 +114,12 @@ export default function RaceDetailPage() {
             Pit Stops
           </Link>
           <Link
+            href={`/races/${id}/replay`}
+            className="rounded bg-pink-600 px-4 py-2 text-white hover:bg-pink-700"
+          >
+            Replay
+          </Link>
+          <Link
             href={`/races/${id}/results`}
             className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
           >

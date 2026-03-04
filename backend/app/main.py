@@ -21,6 +21,7 @@ from app.health.router import router as health_router
 from app.notifications.router import router as notifications_router
 from app.pitstops.router import router as pitstops_router
 from app.races.router import router as races_router
+from app.replay.router import router as replay_router
 from app.results.router import router as results_router
 from app.roles.router import permissions_router, roles_router, user_roles_router
 from app.teams.router import router as teams_router
@@ -80,6 +81,7 @@ def create_app() -> FastAPI:
     app.include_router(calendar_router)
     app.include_router(telemetry_router)
     app.include_router(pitstops_router)
+    app.include_router(replay_router)
 
     # Static files: serve uploaded images / Arquivos estaticos: servir imagens enviadas
     upload_path = Path(settings.UPLOAD_DIR)
