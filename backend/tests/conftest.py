@@ -18,6 +18,7 @@ from app.main import create_app
 from app.notifications.models import Notification  # noqa: F401
 from app.pitstops.models import PitStop, RaceStrategy  # noqa: F401
 from app.races.models import Race, race_entries  # noqa: F401
+from app.replay.models import LapPosition, RaceEvent  # noqa: F401
 from app.results.models import RaceResult  # noqa: F401
 from app.roles.models import Permission, Role, role_permissions, user_roles  # noqa: F401
 from app.teams.models import Team  # noqa: F401
@@ -162,6 +163,10 @@ async def admin_user(db_session: AsyncSession) -> User:
         ("strategies:create", "strategies"),
         ("strategies:update", "strategies"),
         ("strategies:delete", "strategies"),
+        ("replay:read", "replay"),
+        ("replay:create", "replay"),
+        ("replay:update", "replay"),
+        ("replay:delete", "replay"),
     ]:
         perm = Permission(codename=codename, module=module)
         db_session.add(perm)
