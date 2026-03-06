@@ -5,7 +5,7 @@
  * Pagina de pit stops da corrida: listar, criar e ver resumo de pit stops.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -31,7 +31,7 @@ export default function RacePitStopsPage() {
 
   const token = session ? (session as unknown as { accessToken: string }).accessToken : "";
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const [pitsResult, summaryResult, driversResult] = await Promise.all([
       pitstopsApi.list(token, id),
@@ -48,12 +48,12 @@ export default function RacePitStopsPage() {
       setError(null);
     }
     setLoading(false);
-  };
+  }, [token, id]);
 
   useEffect(() => {
     if (!session || !id) return;
     fetchData();
-  }, [session, id, token]);
+  }, [session, id, fetchData]);
 
   const handleCreate = async (data: {
     driver_id: string;

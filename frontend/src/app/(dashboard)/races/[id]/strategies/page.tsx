@@ -5,7 +5,7 @@
  * Pagina de estrategias: criar, editar e excluir estrategias de corrida.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -39,7 +39,7 @@ export default function RaceStrategiesPage() {
 
   const token = session ? (session as unknown as { accessToken: string }).accessToken : "";
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const [strategiesResult, driversResult] = await Promise.all([
       strategiesApi.list(token, id),
@@ -54,12 +54,12 @@ export default function RaceStrategiesPage() {
       setError(null);
     }
     setLoading(false);
-  };
+  }, [token, id]);
 
   useEffect(() => {
     if (!session || !id) return;
     fetchData();
-  }, [session, id, token]);
+  }, [session, id, fetchData]);
 
   const resetForm = () => {
     setFormDriverId("");

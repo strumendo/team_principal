@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import type { DriverDetail } from "@/types/driver";
 import { driversApi } from "@/lib/api-client";
@@ -69,9 +70,11 @@ export default function DriverDetailPage() {
       {/* Driver photo / Foto do piloto */}
       {driver.photo_url && (
         <div className="mb-6">
-          <img
+          <Image
             src={driver.photo_url}
             alt={driver.display_name}
+            width={192}
+            height={192}
             className="h-48 w-48 rounded-lg object-cover shadow-md"
           />
         </div>
