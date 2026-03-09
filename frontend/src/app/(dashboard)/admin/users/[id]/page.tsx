@@ -11,6 +11,8 @@ import Link from "next/link";
 import type { AdminUser, AdminRole } from "@/types/admin";
 import { adminUsersApi, adminRolesApi } from "@/lib/api-client";
 import ImageUpload from "@/components/ImageUpload";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function AdminUserDetailPage() {
   const { data: session } = useSession();
@@ -115,8 +117,8 @@ export default function AdminUserDetailPage() {
     (r) => !userRoles.some((ur) => ur.id === r.id)
   );
 
-  if (loading) return <p className="text-gray-500">Loading... / Carregando...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
   if (!user) return <p className="text-gray-500">User not found / Usuario nao encontrado</p>;
 
   return (

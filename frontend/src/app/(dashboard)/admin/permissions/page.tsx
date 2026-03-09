@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { AdminPermission } from "@/types/admin";
 import { adminPermissionsApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function AdminPermissionsPage() {
   const { data: session } = useSession();
@@ -62,10 +64,10 @@ export default function AdminPermissionsPage() {
         </select>
       </div>
 
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+      {error && <ErrorState message={error} />}
 
       {loading ? (
-        <p className="text-gray-500">Loading... / Carregando...</p>
+        <LoadingState />
       ) : permissions.length === 0 ? (
         <p className="text-gray-500">
           No permissions found. / Nenhuma permissao encontrada.

@@ -5,15 +5,8 @@
  * Card de estrategia: exibe uma estrategia de corrida com acoes.
  */
 
-import type { RaceStrategy, TireCompound } from "@/types/pitstops";
-
-const COMPOUND_COLORS: Record<TireCompound, string> = {
-  soft: "bg-red-100 text-red-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  hard: "bg-gray-100 text-gray-800",
-  intermediate: "bg-green-100 text-green-800",
-  wet: "bg-blue-100 text-blue-800",
-};
+import type { RaceStrategy } from "@/types/pitstops";
+import { COMPOUND_COLORS } from "@/lib/theme";
 
 interface StrategyCardProps {
   strategy: RaceStrategy;

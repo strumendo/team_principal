@@ -7,22 +7,11 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import type { ChampionshipListItem, ChampionshipStatus } from "@/types/championship";
+import type { ChampionshipListItem } from "@/types/championship";
 import { championshipsApi } from "@/lib/api-client";
-
-const STATUS_COLORS: Record<ChampionshipStatus, string> = {
-  planned: "bg-gray-100 text-gray-800",
-  active: "bg-green-100 text-green-800",
-  completed: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
-};
-
-const STATUS_LABELS: Record<ChampionshipStatus, string> = {
-  planned: "Planned / Planejado",
-  active: "Active / Ativo",
-  completed: "Completed / Concluido",
-  cancelled: "Cancelled / Cancelado",
-};
+import { CHAMPIONSHIP_STATUS_COLORS as STATUS_COLORS, CHAMPIONSHIP_STATUS_LABELS as STATUS_LABELS } from "@/lib/theme";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function StandingsHubPage() {
   const { data: session } = useSession();
@@ -51,11 +40,11 @@ export default function StandingsHubPage() {
   }, [session, token]);
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   return (

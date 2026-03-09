@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { NotificationListItem, NotificationType } from "@/types/notification";
 import { notificationsApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 const TYPE_BADGE: Record<NotificationType, { label: string; color: string }> = {
   race_scheduled: { label: "Race Scheduled", color: "bg-blue-100 text-blue-800" },
@@ -124,9 +126,9 @@ export default function NotificationsPage() {
       </div>
 
       {loading ? (
-        <p className="text-gray-500">Loading... / Carregando...</p>
+        <LoadingState />
       ) : error ? (
-        <p className="text-red-600">{error}</p>
+        <ErrorState message={error} />
       ) : notifications.length === 0 ? (
         <p className="text-gray-500">
           No notifications. / Nenhuma notificacao.

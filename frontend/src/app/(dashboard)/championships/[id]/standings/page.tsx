@@ -13,6 +13,8 @@ import type { StandingsBreakdown, TeamBreakdown, DriverBreakdown, RacePoints } f
 import type { DriverStanding } from "@/types/driver";
 import type { ChampionshipDetail } from "@/types/championship";
 import { championshipsApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 type Tab = "teams" | "drivers";
 
@@ -70,11 +72,11 @@ export default function ChampionshipStandingsPage() {
   }, [session, id, token]);
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   if (!championship) {

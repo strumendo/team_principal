@@ -14,6 +14,8 @@ import type { DriverListItem } from "@/types/driver";
 import { pitstopsApi, driversApi } from "@/lib/api-client";
 import PitStopTable from "@/components/pitstops/PitStopTable";
 import PitStopForm from "@/components/pitstops/PitStopForm";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function RacePitStopsPage() {
   const { data: session } = useSession();
@@ -89,8 +91,8 @@ export default function RacePitStopsPage() {
     ? pitStops.filter((ps) => ps.driver_id === selectedDriver)
     : pitStops;
 
-  if (loading) return <p className="text-gray-500">Loading... / Carregando...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
 
   return (
     <div>

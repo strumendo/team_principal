@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { racesApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function EditRacePage() {
   const { data: session } = useSession();
@@ -93,7 +95,7 @@ export default function EditRacePage() {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   return (
@@ -102,7 +104,7 @@ export default function EditRacePage() {
         Edit Race / Editar Corrida
       </h1>
 
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+      {error && <ErrorState message={error} />}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

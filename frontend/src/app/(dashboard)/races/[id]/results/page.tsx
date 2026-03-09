@@ -11,6 +11,8 @@ import Link from "next/link";
 import type { RaceResult } from "@/types/result";
 import type { RaceDetail } from "@/types/race";
 import { racesApi, resultsApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function RaceResultsPage() {
   const { data: session } = useSession();
@@ -48,11 +50,11 @@ export default function RaceResultsPage() {
   }, [session, id, token]);
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   if (!race) {

@@ -8,15 +8,12 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ChampionshipDetail, ChampionshipEntry, ChampionshipStatus } from "@/types/championship";
+import type { ChampionshipDetail, ChampionshipEntry } from "@/types/championship";
 import { championshipsApi } from "@/lib/api-client";
-
-const STATUS_COLORS: Record<ChampionshipStatus, string> = {
-  planned: "bg-gray-100 text-gray-800",
-  active: "bg-green-100 text-green-800",
-  completed: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
-};
+import { CHAMPIONSHIP_STATUS_COLORS as STATUS_COLORS } from "@/lib/theme";
+import { ActiveBadge } from "@/components/ui/StatusBadge";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function ChampionshipDetailPage() {
   const { data: session } = useSession();
@@ -75,11 +72,11 @@ export default function ChampionshipDetailPage() {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   if (!championship) {
@@ -139,13 +136,7 @@ export default function ChampionshipDetailPage() {
           <div>
             <dt className="text-sm font-medium text-gray-500">Active / Ativo</dt>
             <dd>
-              <span
-                className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                  championship.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                }`}
-              >
-                {championship.is_active ? "Yes / Sim" : "No / Nao"}
-              </span>
+              <ActiveBadge isActive={championship.is_active} />
             </dd>
           </div>
         </dl>
@@ -211,13 +202,7 @@ export default function ChampionshipDetailPage() {
                     {new Date(entry.registered_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                        entry.team_is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {entry.team_is_active ? "Yes / Sim" : "No / Nao"}
-                    </span>
+                    <ActiveBadge isActive={entry.team_is_active} />
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button

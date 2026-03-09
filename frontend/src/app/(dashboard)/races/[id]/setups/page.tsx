@@ -13,6 +13,7 @@ import type { CarSetup } from "@/types/telemetry";
 import type { DriverListItem } from "@/types/driver";
 import { telemetryApi, driversApi } from "@/lib/api-client";
 import SetupForm from "@/components/telemetry/SetupForm";
+import LoadingState from "@/components/ui/LoadingState";
 
 export default function RaceSetupsPage() {
   const { data: session } = useSession();
@@ -136,7 +137,7 @@ export default function RaceSetupsPage() {
     }
   };
 
-  if (loading) return <p className="text-gray-500">Loading... / Carregando...</p>;
+  if (loading) return <LoadingState />;
   if (error && !setups.length) return <p className="text-red-600">{error}</p>;
 
   // Group setups by driver / Agrupa setups por piloto
