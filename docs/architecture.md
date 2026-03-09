@@ -131,10 +131,39 @@ backend/
 │   │   ├── service.py       # Date-range queries across championships
 │   │   └── schemas.py       # CalendarRaceResponse schema
 │   │
+│   ├── penalties/            # Penalties module / Modulo de penalidades
+│   │   ├── router.py        # CRUD endpoints (5 penalty types, DSQ auto-sync)
+│   │   ├── service.py       # Penalty logic + standings impact
+│   │   ├── models.py        # Penalty model, PenaltyType enum
+│   │   └── schemas.py       # Pydantic schemas
+│   │
+│   ├── standings/            # Standings module / Modulo de classificacao
+│   │   ├── router.py        # Standings breakdown endpoints
+│   │   ├── service.py       # Race-by-race breakdown computation
+│   │   └── schemas.py       # StandingsBreakdown schemas
+│   │
+│   ├── telemetry/            # Telemetry module / Modulo de telemetria
+│   │   ├── router.py        # 11 endpoints: CRUD laps/setups + bulk + summary + compare
+│   │   ├── service.py       # Lap time analysis, driver comparison
+│   │   ├── models.py        # LapTime, CarSetup models
+│   │   └── schemas.py       # Pydantic schemas
+│   │
+│   ├── pitstops/             # Pit stops module / Modulo de pit stops
+│   │   ├── router.py        # 11 endpoints: CRUD pitstops/strategies + summary
+│   │   ├── service.py       # Pit stop recording, strategy management
+│   │   ├── models.py        # PitStop, RaceStrategy, TireCompound enum
+│   │   └── schemas.py       # Pydantic schemas
+│   │
+│   ├── replay/               # Race replay module / Modulo de replay de corrida
+│   │   ├── router.py        # 15 endpoints: CRUD positions/events + analysis
+│   │   ├── service.py       # Replay data, stint analysis, overtake detection
+│   │   ├── models.py        # LapPosition, RaceEvent, RaceEventType enum
+│   │   └── schemas.py       # Pydantic schemas
+│   │
 │   └── health/              # Health check module
 │       └── router.py        # GET /health, GET /health/db
 │
-├── tests/                   # pytest test suite
+├── tests/                   # pytest test suite (411+ tests)
 │   ├── conftest.py          # Fixtures: db, client, users, auth headers
 │   ├── test_auth.py         # 7 tests
 │   ├── test_users.py        # 19 tests
@@ -155,7 +184,13 @@ backend/
 │   ├── test_dashboard.py            # 13 tests
 │   ├── test_notifications.py        # 25 tests
 │   ├── test_uploads.py              # 14 tests
+│   ├── test_penalties.py            # 38 tests
 │   ├── test_calendar.py             # 12 tests
+│   ├── test_standings.py            # 10 tests
+│   ├── test_telemetry.py            # 29 tests
+│   ├── test_pitstops.py             # 24 tests
+│   ├── test_replay.py               # 26 tests
+│   ├── test_websocket.py            # 6 tests
 │   └── test_health.py               # 2 tests
 │
 ├── alembic/                 # Database migrations
@@ -228,6 +263,13 @@ All routers are registered in `app/main.py` via `app.include_router()`:
 | `notifications_router` | `/api/v1/notifications` | `app/notifications/router.py` |
 | `uploads_router` | `/api/v1/uploads` | `app/uploads/router.py` |
 | `calendar_router` | `/api/v1/calendar` | `app/calendar/router.py` |
+| `penalties_router` | `/api/v1/races/.../penalties` | `app/penalties/router.py` |
+| `standings_router` | `/api/v1/championships/.../standings/breakdown` | `app/standings/router.py` |
+| `telemetry_router` | `/api/v1/races/.../laps`, `/api/v1/races/.../setups` | `app/telemetry/router.py` |
+| `pitstops_router` | `/api/v1/races/.../pitstops`, `/api/v1/races/.../strategies` | `app/pitstops/router.py` |
+| `replay_router` | `/api/v1/races/.../positions`, `/api/v1/races/.../events`, `/api/v1/races/.../analysis` | `app/replay/router.py` |
+
+**See [api-reference.md](./api-reference.md) for the full API index with all endpoints.**
 
 ### Complete Endpoint Map / Mapa Completo de Endpoints
 
@@ -526,24 +568,34 @@ frontend/src/
 │   ├── (auth)/          # Public auth pages / Paginas publicas de auth
 │   │   ├── login/
 │   │   └── register/
-│   ├── (dashboard)/     # Protected pages / Paginas protegidas
-│   │   ├── dashboard/
-│   │   ├── championships/  # List, detail, create, edit pages
-│   │   ├── races/          # Detail, edit pages (list/create under championships)
-│   │   ├── drivers/           # Drivers list page
-│   │   ├── calendar/         # Season calendar with monthly grid view
-│   │   ├── notifications/  # Notifications list with filters and actions
-│   │   └── admin/          # Admin panel (users, roles, permissions)
+│   ├── (dashboard)/     # Protected pages / Paginas protegidas (32 pages)
+│   │   ├── dashboard/       # Dashboard with metrics charts
+│   │   ├── championships/   # List, detail, create, edit, standings, races
+│   │   ├── races/           # Detail, edit, results, telemetry, setups, pitstops, strategies, replay
+│   │   ├── drivers/         # Drivers list and detail pages
+│   │   ├── standings/       # Standings hub page
+│   │   ├── calendar/        # Season calendar with monthly grid view
+│   │   ├── notifications/   # Notifications list with filters
+│   │   └── admin/           # Admin panel (users, roles, permissions)
 │   └── api/auth/        # NextAuth.js API routes
 ├── components/
-│   ├── ImageUpload.tsx  # Reusable image upload with preview / Upload de imagem reutilizavel com preview
+│   ├── ImageUpload.tsx  # Reusable image upload with preview
 │   ├── calendar/        # CalendarGrid, CalendarDayCell, CalendarRaceEvent
-│   ├── ui/              # Reusable UI components / Componentes UI reutilizaveis
+│   ├── dashboard/       # StandingsChart, RaceDistributionChart
+│   ├── telemetry/       # LapTimeChart, LapTimeTable, SetupForm
+│   ├── pitstops/        # PitStopTable, PitStopForm, StrategyCard
+│   ├── replay/          # PositionChart, GapChart, RaceTimeline, StintTable, RaceSummary
+│   ├── ui/              # Shared UI: LoadingState, ErrorState, StatusBadge
 │   ├── auth/            # Auth-specific components
-│   └── layout/          # Layout components
+│   └── layout/          # Layout components (sidebar, header)
 ├── lib/                 # Utilities / Utilitarios
 │   ├── auth.ts          # NextAuth config
-│   └── api-client.ts    # API wrapper
+│   ├── api-client.ts    # API wrapper (all API modules)
+│   └── theme.ts         # Shared color constants and labels
+├── types/               # TypeScript type definitions
+│   ├── championship.ts, race.ts, driver.ts, team.ts
+│   ├── telemetry.ts, pitstops.ts, race-replay.ts
+│   └── admin.ts
 └── middleware.ts        # Route protection / Protecao de rotas
 ```
 
@@ -572,13 +624,16 @@ frontend/src/
 ### Test Pyramid / Piramide de Testes
 
 ```
-┌───────────────────┐
-│ Integration (310) │  ← httpx AsyncClient against test app
-│  (API-level)      │    Tests full request/response cycle
-├───────────────────┤
-│  Unit (implicit)  │  ← Service functions tested via API
-│                   │    No separate unit test layer yet
-└───────────────────┘
+┌───────────────────────┐
+│ Backend (411+ tests)  │  ← httpx AsyncClient against test app
+│  Integration + API    │    Tests full request/response cycle
+├───────────────────────┤
+│ Frontend (64 tests)   │  ← Jest + React Testing Library
+│  Component + Unit     │    Tests components, pages, API client
+├───────────────────────┤
+│  Unit (implicit)      │  ← Service functions tested via API
+│                       │    No separate unit test layer yet
+└───────────────────────┘
 ```
 
 ### Test Infrastructure / Infraestrutura de Testes
@@ -610,12 +665,13 @@ db (AsyncSession)
 
 ### CI/CD
 
-- **GitHub Actions:** Separate workflows for backend and frontend
-- **Backend CI:** `ruff check` → `mypy --strict` → `pytest`
-- **Frontend CI:** `npm run lint` → `npm run build`
+- **GitHub Actions:** Separate workflows for backend and frontend (path-based triggers)
+- **Backend CI:** `ruff check` → `mypy --strict` → `pytest --cov`
+- **Frontend CI:** `npm run lint` → `npx tsc --noEmit` → `npm run test:ci` → `npm run build`
+- **Dependabot:** Weekly dependency updates for pip, npm, and GitHub Actions
 
-### Production / Producao (future / futuro)
+### Production / Producao
 
-- AWS ECS/EC2 for compute
-- AWS S3 for file storage
-- AWS RDS for managed PostgreSQL
+- **Docker Compose:** Production config with network isolation (`docker-compose.prod.yml`)
+- **Makefile:** Common commands for dev, test, lint, build, deploy
+- **See [devops.md](./devops.md)** for full DevOps documentation
