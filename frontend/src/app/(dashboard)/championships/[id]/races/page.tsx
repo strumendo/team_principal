@@ -8,25 +8,13 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import type { RaceListItem, RaceStatus } from "@/types/race";
+import type { RaceListItem } from "@/types/race";
 import type { ChampionshipDetail } from "@/types/championship";
 import { racesApi, championshipsApi } from "@/lib/api-client";
-
-const STATUS_COLORS: Record<RaceStatus, string> = {
-  scheduled: "bg-gray-100 text-gray-800",
-  qualifying: "bg-yellow-100 text-yellow-800",
-  active: "bg-green-100 text-green-800",
-  finished: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
-};
-
-const STATUS_LABELS: Record<RaceStatus, string> = {
-  scheduled: "Scheduled / Agendada",
-  qualifying: "Qualifying / Classificacao",
-  active: "Active / Ativa",
-  finished: "Finished / Finalizada",
-  cancelled: "Cancelled / Cancelada",
-};
+import { RACE_STATUS_COLORS as STATUS_COLORS, RACE_STATUS_LABELS as STATUS_LABELS } from "@/lib/theme";
+import { ActiveBadge } from "@/components/ui/StatusBadge";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function ChampionshipRacesPage() {
   const { data: session } = useSession();
@@ -72,11 +60,11 @@ export default function ChampionshipRacesPage() {
   }, [session, id, token, statusFilter, activeFilter]);
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   return (
@@ -187,15 +175,7 @@ export default function ChampionshipRacesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                        race.is_active
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {race.is_active ? "Yes / Sim" : "No / Nao"}
-                    </span>
+                    <ActiveBadge isActive={race.is_active} />
                   </td>
                 </tr>
               ))}

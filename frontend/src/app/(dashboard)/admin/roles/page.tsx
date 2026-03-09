@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { AdminRole } from "@/types/admin";
 import { adminRolesApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function AdminRolesPage() {
   const { data: session } = useSession();
@@ -49,10 +51,10 @@ export default function AdminRolesPage() {
         </Link>
       </div>
 
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+      {error && <ErrorState message={error} />}
 
       {loading ? (
-        <p className="text-gray-500">Loading... / Carregando...</p>
+        <LoadingState />
       ) : roles.length === 0 ? (
         <p className="text-gray-500">
           No roles found. / Nenhum papel encontrado.

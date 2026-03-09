@@ -13,6 +13,8 @@ import type { LapTime, LapTimeSummary, DriverComparison } from "@/types/telemetr
 import { telemetryApi } from "@/lib/api-client";
 import LapTimeChart from "@/components/telemetry/LapTimeChart";
 import LapTimeTable from "@/components/telemetry/LapTimeTable";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function RaceTelemetryPage() {
   const { data: session } = useSession();
@@ -71,8 +73,8 @@ export default function RaceTelemetryPage() {
   });
   const chartComparisons: DriverComparison[] = Array.from(driverMap.values());
 
-  if (loading) return <p className="text-gray-500">Loading... / Carregando...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
 
   return (
     <div>

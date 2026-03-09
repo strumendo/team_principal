@@ -9,6 +9,9 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { AdminUser } from "@/types/admin";
 import { adminUsersApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
+import { ActiveBadge } from "@/components/ui/StatusBadge";
 
 export default function AdminUsersPage() {
   const { data: session } = useSession();
@@ -77,10 +80,10 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+      {error && <ErrorState message={error} />}
 
       {loading ? (
-        <p className="text-gray-500">Loading... / Carregando...</p>
+        <LoadingState />
       ) : users.length === 0 ? (
         <p className="text-gray-500">
           No users found. / Nenhum usuario encontrado.
@@ -122,15 +125,7 @@ export default function AdminUsersPage() {
                     {user.full_name}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                        user.is_active
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {user.is_active ? "Yes / Sim" : "No / Nao"}
-                    </span>
+                    <ActiveBadge isActive={user.is_active} />
                   </td>
                   <td className="px-6 py-4">
                     {user.is_superuser && (

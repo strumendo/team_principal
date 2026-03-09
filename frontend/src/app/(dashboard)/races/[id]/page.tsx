@@ -8,16 +8,12 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import type { RaceDetail, RaceEntry, RaceStatus } from "@/types/race";
+import type { RaceDetail, RaceEntry } from "@/types/race";
 import { racesApi } from "@/lib/api-client";
-
-const STATUS_COLORS: Record<RaceStatus, string> = {
-  scheduled: "bg-gray-100 text-gray-800",
-  qualifying: "bg-yellow-100 text-yellow-800",
-  active: "bg-green-100 text-green-800",
-  finished: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
-};
+import { RACE_STATUS_COLORS as STATUS_COLORS } from "@/lib/theme";
+import { ActiveBadge } from "@/components/ui/StatusBadge";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function RaceDetailPage() {
   const { data: session } = useSession();
@@ -76,11 +72,11 @@ export default function RaceDetailPage() {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   if (!race) {
@@ -177,13 +173,7 @@ export default function RaceDetailPage() {
           <div>
             <dt className="text-sm font-medium text-gray-500">Active / Ativo</dt>
             <dd>
-              <span
-                className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                  race.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                }`}
-              >
-                {race.is_active ? "Yes / Sim" : "No / Nao"}
-              </span>
+              <ActiveBadge isActive={race.is_active} />
             </dd>
           </div>
           <div className="col-span-2">
@@ -232,13 +222,7 @@ export default function RaceDetailPage() {
                     {new Date(entry.registered_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                        entry.team_is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {entry.team_is_active ? "Yes / Sim" : "No / Nao"}
-                    </span>
+                    <ActiveBadge isActive={entry.team_is_active} />
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button

@@ -13,6 +13,7 @@ import type { RaceStrategy, TireCompound } from "@/types/pitstops";
 import type { DriverListItem } from "@/types/driver";
 import { strategiesApi, driversApi } from "@/lib/api-client";
 import StrategyCard from "@/components/pitstops/StrategyCard";
+import LoadingState from "@/components/ui/LoadingState";
 
 const TIRE_COMPOUNDS: TireCompound[] = ["soft", "medium", "hard", "intermediate", "wet"];
 
@@ -153,7 +154,7 @@ export default function RaceStrategiesPage() {
     }
   };
 
-  if (loading) return <p className="text-gray-500">Loading... / Carregando...</p>;
+  if (loading) return <LoadingState />;
 
   return (
     <div>

@@ -9,6 +9,9 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import type { DriverListItem } from "@/types/driver";
 import { driversApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
+import { ActiveBadge } from "@/components/ui/StatusBadge";
 
 export default function DriversPage() {
   const { data: session } = useSession();
@@ -72,12 +75,10 @@ export default function DriversPage() {
         />
       </div>
 
-      {error && (
-        <p className="mb-4 text-red-600">{error}</p>
-      )}
+      {error && <ErrorState message={error} />}
 
       {loading ? (
-        <p className="text-gray-500">Loading... / Carregando...</p>
+        <LoadingState />
       ) : drivers.length === 0 ? (
         <p className="text-gray-500">
           No drivers found. / Nenhum piloto encontrado.
@@ -128,15 +129,7 @@ export default function DriversPage() {
                     {driver.nationality || "—"}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                        driver.is_active
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {driver.is_active ? "Yes / Sim" : "No / Nao"}
-                    </span>
+                    <ActiveBadge isActive={driver.is_active} />
                   </td>
                 </tr>
               ))}

@@ -13,6 +13,7 @@ import type { LapTimeSummary, DriverComparison } from "@/types/telemetry";
 import type { DriverListItem } from "@/types/driver";
 import { telemetryApi, driversApi } from "@/lib/api-client";
 import LapTimeChart from "@/components/telemetry/LapTimeChart";
+import LoadingState from "@/components/ui/LoadingState";
 
 function formatMs(ms: number): string {
   const minutes = Math.floor(ms / 60000);
@@ -89,7 +90,7 @@ export default function CompareDriversPage() {
     ? drivers.filter((d) => summary.drivers.some((sd) => sd.driver_id === d.id))
     : drivers;
 
-  if (loading) return <p className="text-gray-500">Loading... / Carregando...</p>;
+  if (loading) return <LoadingState />;
 
   return (
     <div>

@@ -24,6 +24,8 @@ import StintTable from "@/components/replay/StintTable";
 import RaceSummary from "@/components/replay/RaceSummary";
 import LapPositionForm from "@/components/replay/LapPositionForm";
 import RaceEventForm from "@/components/replay/RaceEventForm";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 type TabType = "replay" | "analysis" | "summary";
 
@@ -128,11 +130,11 @@ export default function RaceReplayPage() {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   if (!race) {

@@ -11,6 +11,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { DriverDetail } from "@/types/driver";
 import { driversApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
+import { ActiveBadge } from "@/components/ui/StatusBadge";
 
 export default function DriverDetailPage() {
   const { data: session } = useSession();
@@ -41,11 +44,11 @@ export default function DriverDetailPage() {
   }, [session, id]);
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   if (!driver) {
@@ -102,15 +105,7 @@ export default function DriverDetailPage() {
           <div>
             <dt className="text-sm font-medium text-gray-500">Active / Ativo</dt>
             <dd>
-              <span
-                className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                  driver.is_active
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {driver.is_active ? "Yes / Sim" : "No / Nao"}
-              </span>
+              <ActiveBadge isActive={driver.is_active} />
             </dd>
           </div>
           <div>

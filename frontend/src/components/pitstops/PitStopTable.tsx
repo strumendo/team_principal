@@ -6,14 +6,7 @@
  */
 
 import type { PitStop, TireCompound } from "@/types/pitstops";
-
-const COMPOUND_COLORS: Record<TireCompound, string> = {
-  soft: "bg-red-100 text-red-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  hard: "bg-gray-100 text-gray-800",
-  intermediate: "bg-green-100 text-green-800",
-  wet: "bg-blue-100 text-blue-800",
-};
+import { CompoundBadge } from "@/components/ui/StatusBadge";
 
 /**
  * Format milliseconds to seconds with decimals (e.g. 2.450s).
@@ -22,15 +15,6 @@ const COMPOUND_COLORS: Record<TireCompound, string> = {
 function formatDuration(ms: number): string {
   const seconds = ms / 1000;
   return `${seconds.toFixed(3)}s`;
-}
-
-function CompoundBadge({ compound }: { compound: TireCompound | null }) {
-  if (!compound) return <span className="text-gray-400">-</span>;
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${COMPOUND_COLORS[compound]}`}>
-      {compound.charAt(0).toUpperCase() + compound.slice(1)}
-    </span>
-  );
 }
 
 interface PitStopTableProps {

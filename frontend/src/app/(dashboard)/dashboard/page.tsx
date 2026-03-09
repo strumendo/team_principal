@@ -11,6 +11,8 @@ import type { DashboardSummary } from "@/types/dashboard";
 import { dashboardApi } from "@/lib/api-client";
 import StandingsChart from "@/components/dashboard/StandingsChart";
 import RaceDistributionChart from "@/components/dashboard/RaceDistributionChart";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -38,11 +40,11 @@ export default function DashboardPage() {
   }, [session]);
 
   if (loading) {
-    return <p className="text-gray-500">Loading... / Carregando...</p>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <ErrorState message={error} />;
   }
 
   if (!summary) {

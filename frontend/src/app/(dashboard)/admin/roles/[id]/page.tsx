@@ -10,6 +10,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { AdminRoleDetail, AdminPermission } from "@/types/admin";
 import { adminRolesApi, adminPermissionsApi } from "@/lib/api-client";
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
 
 export default function AdminRoleDetailPage() {
   const { data: session } = useSession();
@@ -125,8 +127,8 @@ export default function AdminRoleDetailPage() {
     (p) => !role?.permissions.some((rp) => rp.id === p.id)
   );
 
-  if (loading) return <p className="text-gray-500">Loading... / Carregando...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
   if (!role) return <p className="text-gray-500">Role not found / Papel nao encontrado</p>;
 
   return (
