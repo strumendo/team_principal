@@ -1,0 +1,90 @@
+# TeamPrincipal — Production Docker Compose
+# Docker Compose de Producao do TeamPrincipal
+#
+# Usage / Uso:
+#   docker-compose -f docker-compose.prod.yml up -d --build
+#
+# Required env vars / Variaveis de ambiente obrigatorias:
+#   POSTGRES_PASSWORD, SECRET_KEY, NEXTAUTH_SECRET
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: team_principal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: team_principal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U team_principal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No port exposure in production — only internal network
+    # Sem exposicao de portas em producao — apenas rede interna
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: prod
+    restart: always
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: team_principal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: team_principal
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:3000"]}
+      DEBUG: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+      - web
+    # Only expose internally — reverse proxy handles external traffic
+    # Expoe apenas internamente — proxy reverso gerencia trafego externo
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - web
+    expose:
+      - "3000"
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  internal:
+    driver: bridge
+  web:
+    driver: bridge

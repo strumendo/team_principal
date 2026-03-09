@@ -1,0 +1,50 @@
+# Backend Docker ignore
+# Arquivos ignorados pelo Docker do backend
+
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments / Ambientes virtuais
+.venv/
+venv/
+
+# Testing / Testes
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+tests/
+
+# Tooling
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Docs
+*.md
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Uploads
+uploads/
