@@ -28,6 +28,7 @@ httpx = "^0.28.0"
 ruff = "^0.8.0"
 mypy = "^1.13.0"
 aiosqlite = "^0.20.0"
+pytest-cov = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -52,6 +53,18 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing --cov-report=html"
 filterwarnings = [
     "ignore:The test .* is marked with '@pytest.mark.asyncio' but it is not an async function:pytest.PytestWarning",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/db/seed.py", "app/main.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__",
 ]
